@@ -477,7 +477,7 @@ export default function TimelineCreator() {
     // Add disclosure text
     doc.setFontSize(6);
     doc.setTextColor(100, 116, 139); // slate-500
-    const disclosureText = "Disclosure: This timeline is based on the Hawaiʻi Association of REALTORS® Purchase Contract, Revision 2/25. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties.";
+    const disclosureText = "Disclosure: This timeline is based on the Hawai'i Association of REALTORS(R) Purchase Contract, Revision 2/25. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties.";
     
     // Split text to fit width (14 to 196 = 182 width)
     const splitText = doc.splitTextToSize(disclosureText, 182);
