@@ -472,6 +472,24 @@ export default function TimelineCreator() {
       alternateRowStyles: { fillColor: [248, 250, 252] } // slate-50
     });
 
+    const finalY = (doc as any).lastAutoTable?.finalY || 280;
+    
+    // Add disclosure text
+    doc.setFontSize(6);
+    doc.setTextColor(100, 116, 139); // slate-500
+    const disclosureText = "Disclosure: This timeline is based on the Hawaiʻi Association of REALTORS® Purchase Contract, Revision 2/25. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties.";
+    
+    // Split text to fit width (14 to 196 = 182 width)
+    const splitText = doc.splitTextToSize(disclosureText, 182);
+    
+    // If the text would run off the page, add a new page
+    if (finalY + 10 + (splitText.length * 3) > doc.internal.pageSize.getHeight()) {
+      doc.addPage();
+      doc.text(splitText, 14, 20);
+    } else {
+      doc.text(splitText, 14, finalY + 10);
+    }
+
     doc.save('Purchase_Contract_Timeline.pdf');
   };
 
@@ -895,6 +913,11 @@ export default function TimelineCreator() {
           No events in timeline. Click "Add Event" to get started.
         </div>
       )}
+
+      <div className="mt-8 pt-4 border-t border-slate-200 text-[10px] text-slate-500 leading-relaxed text-center">
+        <strong>Disclosure:</strong><br />
+        This timeline is based on the Hawaiʻi Association of REALTORS® Purchase Contract, Revision 2/25. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties.
+      </div>
     </div>
   );
 }
