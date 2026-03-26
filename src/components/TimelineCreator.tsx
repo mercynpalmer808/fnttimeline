@@ -81,13 +81,17 @@ const INITIAL_EVENTS: TimelineEvent[] = [
 export default function TimelineCreator() {
   const [acceptanceDate, setAcceptanceDate] = useState<string>('');
   const [closingDate, setClosingDate] = useState<string>('');
+  const [contractDate, setContractDate] = useState<string>('');
+  const [salesPrice, setSalesPrice] = useState<string>('');
 
   const [propertyAddress, setPropertyAddress] = useState('');
+  const [tenure, setTenure] = useState<'' | 'Fee Simple' | 'Leasehold'>('');
   const [titleEscrow, setTitleEscrow] = useState('');
   const [escrowNumber, setEscrowNumber] = useState('');
 
   const [listingAgent, setListingAgent] = useState('');
   const [buyersAgent, setBuyersAgent] = useState('');
+  const [sellerBuyerInfo, setSellerBuyerInfo] = useState('');
   const [lenderInfo, setLenderInfo] = useState('');
 
   const [financing, setFinancing] = useState<Record<FinancingType, boolean>>({
@@ -107,11 +111,15 @@ export default function TimelineCreator() {
     if (window.confirm('Are you sure you want to clear all inputs and start a new timeline?')) {
       setAcceptanceDate('');
       setClosingDate('');
+      setContractDate('');
+      setSalesPrice('');
       setPropertyAddress('');
+      setTenure('');
       setTitleEscrow('');
       setEscrowNumber('');
       setListingAgent('');
       setBuyersAgent('');
+      setSellerBuyerInfo('');
       setLenderInfo('');
       setFinancing({ 'Cash': false, 'Loan': false, '1031 Exchange': false });
       setHarpta(false);
@@ -209,11 +217,15 @@ export default function TimelineCreator() {
           events,
           acceptanceDate,
           closingDate,
+          contractDate,
+          salesPrice,
           propertyAddress,
+          tenure,
           titleEscrow,
           escrowNumber,
           listingAgent,
           buyersAgent,
+          sellerBuyerInfo,
           lenderInfo,
           financing,
           harpta,
@@ -295,11 +307,15 @@ export default function TimelineCreator() {
             setEvents(loadedData.events || INITIAL_EVENTS);
             setAcceptanceDate(loadedData.acceptanceDate || '');
             setClosingDate(loadedData.closingDate || '');
+            setContractDate(loadedData.contractDate || '');
+            setSalesPrice(loadedData.salesPrice || '');
             setPropertyAddress(loadedData.propertyAddress || '');
+            setTenure(loadedData.tenure || '');
             setTitleEscrow(loadedData.titleEscrow || '');
             setEscrowNumber(loadedData.escrowNumber || '');
             setListingAgent(loadedData.listingAgent || '');
             setBuyersAgent(loadedData.buyersAgent || '');
+            setSellerBuyerInfo(loadedData.sellerBuyerInfo || '');
             setLenderInfo(loadedData.lenderInfo || '');
             setFinancing(loadedData.financing || { 'Cash': false, 'Loan': false, '1031 Exchange': false });
             setHarpta(loadedData.harpta || false);
@@ -320,16 +336,21 @@ export default function TimelineCreator() {
   const handleExport = () => {
     const excelAcceptanceDate = acceptanceDate ? parseISO(acceptanceDate) : 'TBD';
     const excelClosingDate = closingDate ? parseISO(closingDate) : 'TBD';
+    const excelContractDate = contractDate ? parseISO(contractDate) : 'TBD';
 
     const wsData = [
       ['Property Address', propertyAddress],
+      ['Tenure', tenure],
       ['Title Company & Escrow Officer', titleEscrow],
       ['Escrow #', escrowNumber],
       ['Acceptance Date', excelAcceptanceDate],
       ['Closing Date', excelClosingDate],
+      ['Contract Date', excelContractDate],
+      ['Sales Price', salesPrice],
       ['Listing Agent', listingAgent],
       ['Buyer Agent', buyersAgent],
       ['Lender Info', lenderInfo],
+      ['Seller/Buyer Info', sellerBuyerInfo],
       ['Financing', Object.entries(financing).filter(e => e[1]).map(e => e[0]).join(', ')],
       ['HARPTA', harpta ? 'Yes' : 'No'],
       ['FIRPTA', firpta ? 'Yes' : 'No'],
@@ -399,7 +420,7 @@ export default function TimelineCreator() {
           reader.onloadend = () => resolve(reader.result as string);
           reader.readAsDataURL(blob);
         });
-        doc.addImage(base64, 'PNG', 14, 10, 30, 9);
+        doc.addImage(base64, 'PNG', 14, 10, 45, 9);
       }
     } catch (e) {
       console.error("Could not load logo", e);
@@ -409,31 +430,34 @@ export default function TimelineCreator() {
     doc.setTextColor(30, 41, 59); // slate-800
     doc.text("Purchase Contract Timeline", 196, 21, { align: 'right' });
 
-    doc.setFontSize(10);
+    doc.setFontSize(8);
     doc.setTextColor(71, 85, 105); // slate-600
     
     doc.text(`Property Address: ${propertyAddress}`, 14, 35);
-    doc.text(`Title & Escrow: ${titleEscrow}`, 14, 42);
-    doc.text(`Escrow #: ${escrowNumber}`, 14, 49);
-    
+    doc.text(`Tenure: ${tenure}`, 14, 41);
+    doc.text(`Title & Escrow: ${titleEscrow}`, 14, 47);
+    doc.text(`Escrow #: ${escrowNumber}`, 14, 53);
+
     doc.text(`Acceptance Date: ${acceptanceDate ? format(parseISO(acceptanceDate), 'MMM d, yyyy') : 'TBD'}`, 85, 35);
-    doc.text(`Closing Date: ${closingDate ? format(parseISO(closingDate), 'MMM d, yyyy') : 'TBD'}`, 85, 42);
+    doc.text(`Closing Date: ${closingDate ? format(parseISO(closingDate), 'MMM d, yyyy') : 'TBD'}`, 85, 41);
+    doc.text(`Contract Date: ${contractDate ? format(parseISO(contractDate), 'MMM d, yyyy') : 'TBD'}`, 85, 47);
+    doc.text(`Sales Price: ${salesPrice}`, 85, 53);
 
     doc.text(`Listing Agent: ${listingAgent}`, 150, 35);
-    doc.text(`Buyers Agent: ${buyersAgent}`, 150, 42);
-    doc.text(`Lender Info: ${lenderInfo}`, 150, 49);
+    doc.text(`Buyers Agent: ${buyersAgent}`, 150, 41);
+    doc.text(`Lender Info: ${lenderInfo}`, 150, 47);
+    doc.text(`Seller/Buyer Info: ${sellerBuyerInfo}`, 150, 53);
 
     const financingStr = (Object.keys(financing) as FinancingType[]).filter(k => financing[k]).join(', ');
-    doc.text(`Financing: ${financingStr || 'None'}`, 14, 56);
-    doc.text(`Tax Withholdings: ${[harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : ''].filter(Boolean).join(', ') || 'None'}`, 85, 56);
-    doc.text(`Recording: ${landCourt ? 'Land Court' : 'Regular'}`, 150, 56);
-    
-    let startY = 65;
-    if (otherInformation) {
-      doc.text(`Other Info: ${otherInformation}`, 14, 63);
-      startY = 72;
-    }
+    doc.text(`Financing: ${financingStr || 'None'}`, 14, 59);
+    doc.text(`Tax Withholdings: ${[harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : ''].filter(Boolean).join(', ') || 'None'}`, 85, 59);
+    doc.text(`Recording: ${landCourt ? 'Land Court' : 'Regular'}`, 150, 59);
 
+    let startY = 68;
+    if (otherInformation) {
+      doc.text(`Other Info: ${otherInformation}`, 14, 65);
+      startY = 74;
+    }
     const tableData = getSortedEvents().map(event => {
       const calcDate = calculateDate(event);
       let dateStr = 'Needs base date';
@@ -543,15 +567,26 @@ export default function TimelineCreator() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Property Address</label>
-            <input 
-              type="text" 
-              value={propertyAddress} 
+            <input
+              type="text"
+              value={propertyAddress}
               onChange={e => setPropertyAddress(e.target.value)}
               placeholder="123 Main St..."
               className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Tenure</label>
+            <select
+              value={tenure}
+              onChange={e => setTenure(e.target.value as '' | 'Fee Simple' | 'Leasehold')}
+              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
+            >
+              <option value="">Select...</option>
+              <option value="Fee Simple">Fee Simple</option>
+              <option value="Leasehold">Leasehold</option>
+            </select>
+          </div>          <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Title Company & Escrow Officer</label>
             <input 
               type="text" 
@@ -579,24 +614,42 @@ export default function TimelineCreator() {
           <h2 className="text-xl font-semibold text-slate-800 border-b pb-2">Contract Dates</h2>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Acceptance Date</label>
-            <input 
-              type="date" 
-              value={acceptanceDate} 
+            <input
+              type="date"
+              value={acceptanceDate}
               onChange={e => setAcceptanceDate(e.target.value)}
               className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Closing Date</label>
-            <input 
-              type="date" 
-              value={closingDate} 
+            <input
+              type="date"
+              value={closingDate}
               onChange={e => setClosingDate(e.target.value)}
               className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Contract Date</label>
+            <input
+              type="date"
+              value={contractDate}
+              onChange={e => setContractDate(e.target.value)}
+              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Sales Price</label>
+            <input
+              type="text"
+              value={salesPrice}
+              onChange={e => setSalesPrice(e.target.value)}
+              placeholder="$..."
+              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
+            />
+          </div>
         </div>
-
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-slate-800 border-b pb-2">Parties & Info</h2>
           <div>
@@ -621,15 +674,24 @@ export default function TimelineCreator() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Lender Info</label>
-            <input 
-              type="text" 
-              value={lenderInfo} 
+            <input
+              type="text"
+              value={lenderInfo}
               onChange={e => setLenderInfo(e.target.value)}
               placeholder="Name, Company, Contact..."
               className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
             />
           </div>
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Seller/Buyer Info</label>
+            <input
+              type="text"
+              value={sellerBuyerInfo}
+              onChange={e => setSellerBuyerInfo(e.target.value)}
+              placeholder="Names, Contact Info..."
+              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
+            />
+          </div>        </div>
       </div>
 
       <div className="bg-slate-50 p-4 rounded-lg mb-8 border border-slate-200">
