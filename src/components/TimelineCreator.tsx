@@ -500,31 +500,41 @@ export default function TimelineCreator() {
           <img src="/logo.png" alt="Logo" className="h-12 object-contain" />
           <h1 className="text-3xl font-bold text-slate-900">Purchase Contract Timeline</h1>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button 
-            onClick={handleNewTimeline}
-            className="flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            New Timeline
-          </button>
-          <button 
-            onClick={handleSaveTemplate}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            Save Timeline
-          </button>
-          <button 
-            onClick={handlePdfExport}
-            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            <FileText size={18} /> Convert to PDF
-          </button>
-          <button 
-            onClick={handleExport}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            <Download size={18} /> Export Excel
-          </button>
+        <div className="flex flex-col gap-2 md:items-end">
+          <div className="flex flex-wrap gap-2">
+            <button 
+              onClick={handleNewTimeline}
+              className="flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              New Timeline
+            </button>
+            <button 
+              onClick={handleSaveTemplate}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              Save Timeline
+            </button>
+            <button 
+              onClick={handleLoadTemplate}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              Load Timeline
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button 
+              onClick={handlePdfExport}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <FileText size={18} /> Convert to PDF
+            </button>
+            <button 
+              onClick={handleExport}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <Download size={18} /> Export Excel
+            </button>
+          </div>
         </div>
       </div>
 
@@ -707,12 +717,6 @@ export default function TimelineCreator() {
             className={`text-sm px-3 py-1.5 rounded-md transition-colors border ${sortBy === 'dueDate' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
           >
             Sort by Due Date
-          </button>
-          <button 
-            onClick={handleLoadTemplate}
-            className="text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-md transition-colors border border-indigo-200 ml-2"
-          >
-            Load Timeline
           </button>
           <button 
             onClick={handleDeleteTemplate}
