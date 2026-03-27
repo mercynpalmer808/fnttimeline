@@ -35,7 +35,7 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: 'g2b', contingency: 'G-2(b)', task: "Buyer's Review of Prelim Report", days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'g2c', contingency: 'G-2(c)', task: 'Title Defect(s)', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'g3', contingency: 'G-3', task: 'Vesting & Tenancy', days: 14, direction: 'Before', base: 'Closing' },
-  { id: 'h1a', contingency: 'H-1(a)', task: 'No Contingency on Cash Funds', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'h1a', contingency: 'H-1(a)', task: 'No Contingency on Obtaining Cash Funds (Evidence Attached)', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h1b1', contingency: 'H-1(b) i', task: 'No Contingency of Cash Funds', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h1b2', contingency: 'H-1(b) ii', task: 'No Contingency of Cash Funds', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h2', contingency: 'H-2', task: 'Cont. of Cash Funds (Type)', days: 14, direction: 'After', base: 'Acceptance' },
