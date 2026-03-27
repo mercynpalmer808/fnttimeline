@@ -30,8 +30,7 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: 'e5a', contingency: 'E-5(a)', task: 'Inclusion of PV', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e5b', contingency: 'E-5(b)', task: 'Inclusion of PV Docs, etc.', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e5c', contingency: 'E-5(c)', task: 'Inclusion of PV Documents to rescind and terminate Purchase Contract', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'f3a', contingency: 'F-3(a)', task: 'Change to the Closing Date Unilateral Right to Extend', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'f3b', contingency: 'F-3(b)', task: 'Change to the Closing Date - Time is of the Essence', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'f3', contingency: 'F-3(a)', task: 'Change to the Closing Date Unilateral Right to Extend', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'f7a', contingency: 'F-7(a)', task: 'Conveyance Tax Declaration', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'g2b', contingency: 'G-2(b)', task: "Buyer's Review of Prelim Report", days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'g2c', contingency: 'G-2(c)', task: 'Title Defect(s)', days: 14, direction: 'After', base: 'Acceptance' },
@@ -880,6 +879,21 @@ export default function TimelineCreator() {
                       >
                         <option value="J-9(a)">J-9(a)</option>
                         <option value="J-9(b)">J-9(b)</option>
+                      </select>
+                    ) : event.id === 'f3' ? (
+                      <select
+                        value={event.contingency}
+                        onChange={e => {
+                          const isF3A = e.target.value === 'F-3(a)';
+                          updateEvent(event.id, { 
+                            contingency: isF3A ? 'F-3(a)' : 'F-3(b)', 
+                            task: isF3A ? 'Change to the Closing Date Unilateral Right to Extend' : 'Change to the Closing Date - Time is of the Essence' 
+                          });
+                        }}
+                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completed ? 'line-through text-slate-500' : ''}`}
+                      >
+                        <option value="F-3(a)">F-3(a)</option>
+                        <option value="F-3(b)">F-3(b)</option>
                       </select>
                     ) : (
                       <input
