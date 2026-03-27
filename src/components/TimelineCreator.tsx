@@ -433,29 +433,37 @@ export default function TimelineCreator() {
     doc.setFontSize(8);
     doc.setTextColor(71, 85, 105); // slate-600
     
-    doc.text(`Property Address: ${propertyAddress}`, 14, 35);
-    doc.text(`Tenure: ${tenure}`, 14, 41);
-    doc.text(`Title & Escrow: ${titleEscrow}`, 14, 47);
-    doc.text(`Escrow #: ${escrowNumber}`, 14, 53);
+    const drawField = (label: string, value: string, x: number, y: number) => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(label, x, y);
+      const labelWidth = doc.getTextWidth(label + ' ');
+      doc.setFont('helvetica', 'normal');
+      doc.text(value, x + labelWidth, y);
+    };
 
-    doc.text(`Acceptance Date: ${acceptanceDate ? format(parseISO(acceptanceDate), 'MMM d, yyyy') : 'TBD'}`, 85, 35);
-    doc.text(`Closing Date: ${closingDate ? format(parseISO(closingDate), 'MMM d, yyyy') : 'TBD'}`, 85, 41);
-    doc.text(`Contract Date: ${contractDate ? format(parseISO(contractDate), 'MMM d, yyyy') : 'TBD'}`, 85, 47);
-    doc.text(`Sales Price: ${salesPrice}`, 85, 53);
+    drawField('Property Address:', propertyAddress, 14, 35);
+    drawField('Tenure:', tenure, 14, 41);
+    drawField('Title & Escrow:', titleEscrow, 14, 47);
+    drawField('Escrow #:', escrowNumber, 14, 53);
 
-    doc.text(`Listing Agent: ${listingAgent}`, 150, 35);
-    doc.text(`Buyers Agent: ${buyersAgent}`, 150, 41);
-    doc.text(`Lender Info: ${lenderInfo}`, 150, 47);
-    doc.text(`Seller/Buyer Info: ${sellerBuyerInfo}`, 150, 53);
+    drawField('Acceptance Date:', acceptanceDate ? format(parseISO(acceptanceDate), 'MMM d, yyyy') : 'TBD', 85, 35);
+    drawField('Closing Date:', closingDate ? format(parseISO(closingDate), 'MMM d, yyyy') : 'TBD', 85, 41);
+    drawField('Contract Date:', contractDate ? format(parseISO(contractDate), 'MMM d, yyyy') : 'TBD', 85, 47);
+    drawField('Sales Price:', salesPrice, 85, 53);
+
+    drawField('Listing Agent:', listingAgent, 150, 35);
+    drawField('Buyers Agent:', buyersAgent, 150, 41);
+    drawField('Lender Info:', lenderInfo, 150, 47);
+    drawField('Seller/Buyer Info:', sellerBuyerInfo, 150, 53);
 
     const financingStr = (Object.keys(financing) as FinancingType[]).filter(k => financing[k]).join(', ');
-    doc.text(`Financing: ${financingStr || 'None'}`, 14, 59);
-    doc.text(`Tax Withholdings: ${[harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : ''].filter(Boolean).join(', ') || 'None'}`, 85, 59);
-    doc.text(`Recording: ${landCourt ? 'Land Court' : 'Regular'}`, 150, 59);
+    drawField('Financing:', financingStr || 'None', 14, 59);
+    drawField('Tax Withholdings:', [harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : ''].filter(Boolean).join(', ') || 'None', 85, 59);
+    drawField('Recording:', landCourt ? 'Land Court' : 'Regular', 150, 59);
 
     let startY = 68;
     if (otherInformation) {
-      doc.text(`Other Info: ${otherInformation}`, 14, 65);
+      drawField('Other Info:', otherInformation, 14, 65);
       startY = 74;
     }
     const tableData = getSortedEvents().map(event => {
