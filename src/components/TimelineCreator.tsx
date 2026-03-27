@@ -53,8 +53,7 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: '9', contingency: 'J-3', task: 'Final Walkthrough', days: 5, direction: 'Before', base: 'Closing' },
   { id: 'j4', contingency: 'J-4', task: 'Withheld/Collected Funds for Repairs', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'j8', contingency: 'J-8', task: 'Removal of Items from Property', days: 5, direction: 'Before', base: 'Closing' },
-  { id: 'j9a', contingency: 'J-9(a)', task: 'Cleaning before Closing', days: 5, direction: 'Before', base: 'Closing' },
-  { id: 'j9b', contingency: 'J-9(b)', task: 'Cleaning Credit', days: 5, direction: 'Before', base: 'Closing' },
+  { id: 'j9_cleaning', contingency: 'J-9(a)', task: 'Cleaning before Closing', days: 5, direction: 'Before', base: 'Closing' },
   { id: 'j10', contingency: 'J-10', task: 'Animal Related Treatment', days: 5, direction: 'Before', base: 'Closing' },
   { id: 'k_staking_survey', contingency: 'K-1', task: 'Staking', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'k3a', contingency: 'K-3(a)', task: 'Boundary Encroachment(terminate)', days: 14, direction: 'After', base: 'Acceptance' },
@@ -866,6 +865,21 @@ export default function TimelineCreator() {
                       >
                         <option value="K-1">K-1</option>
                         <option value="K-2">K-2</option>
+                      </select>
+                    ) : event.id === 'j9_cleaning' ? (
+                      <select
+                        value={event.contingency}
+                        onChange={e => {
+                          const isJ9A = e.target.value === 'J-9(a)';
+                          updateEvent(event.id, { 
+                            contingency: isJ9A ? 'J-9(a)' : 'J-9(b)', 
+                            task: isJ9A ? 'Cleaning before Closing' : 'Cleaning Credit' 
+                          });
+                        }}
+                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completed ? 'line-through text-slate-500' : ''}`}
+                      >
+                        <option value="J-9(a)">J-9(a)</option>
+                        <option value="J-9(b)">J-9(b)</option>
                       </select>
                     ) : (
                       <input
