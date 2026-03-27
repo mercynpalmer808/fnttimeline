@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { addDays, subDays, format, parseISO, isValid } from 'date-fns';
@@ -336,6 +336,8 @@ export default function TimelineCreator() {
     const excelContractDate = contractDate ? parseISO(contractDate) : 'TBD';
 
     const wsData = [
+      ['PURCHASE CONTRACT TIMELINE'],
+      [],
       ['Property Address', propertyAddress],
       ['Tenure', tenure],
       ['Title Company & Escrow Officer', titleEscrow],
@@ -356,12 +358,12 @@ export default function TimelineCreator() {
       [],
       ['Due Date', 'Contingency #', 'Party', 'Task', 'Date Completed', 'Days', 'Direction', 'Base', 'Notes'],
       ...getSortedEvents().map((event, index) => {
-        const rowNum = 16 + index;
+        const rowNum = 22 + index;
         const calcDate = calculateDate(event);
         
         let dateCell: any = calcDate || 'TBD';
         if (event.direction !== 'Custom Date') {
-          const formulaStr = `IF(H${rowNum}="Acceptance",IF($B$4="TBD","TBD",IF(G${rowNum}="After",$B$4+F${rowNum},$B$4-F${rowNum})),IF(H${rowNum}="Closing",IF($B$5="TBD","TBD",IF(G${rowNum}="After",$B$5+F${rowNum},$B$5-F${rowNum})),"TBD"))`;
+          const formulaStr = `IF(H${rowNum}="Acceptance",IF($B$7="TBD","TBD",IF(G${rowNum}="After",$B$7+F${rowNum},$B$7-F${rowNum})),IF(H${rowNum}="Closing",IF($B$8="TBD","TBD",IF(G${rowNum}="After",$B$8+F${rowNum},$B$8-F${rowNum})),"TBD"))`;
           dateCell = { f: formulaStr, v: calcDate || 'TBD', z: 'mm/dd/yy' };
         }
 
@@ -381,19 +383,96 @@ export default function TimelineCreator() {
 
     const worksheet = XLSX.utils.aoa_to_sheet(wsData, { cellDates: true });
     
-    if (worksheet['B4'] && worksheet['B4'].t === 'd') worksheet['B4'].z = 'mm/dd/yy';
-    if (worksheet['B5'] && worksheet['B5'].t === 'd') worksheet['B5'].z = 'mm/dd/yy';
+    // Style Title
+    if (worksheet['A1']) {
+      worksheet['A1'].s = {
+        font: { name: 'Arial', sz: 16, bold: true, color: { rgb: "1E3A8A" } },
+        alignment: { horizontal: "center", vertical: "center" }
+      };
+    }
+    worksheet['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
 
-    const colWidths = [15, 15, 15, 40, 10, 10, 10, 12, 20]; // Minimum widths
-    wsData.forEach(row => {
-      row.forEach((cell, i) => {
-        const length = cell && (cell as any).v ? String((cell as any).v).length : (cell ? String(cell).length : 0);
-        if (length > (colWidths[i] || 0)) {
-          colWidths[i] = length;
+    // Format info dates
+    if (worksheet['B7'] && worksheet['B7'].t === 'd') worksheet['B7'].z = 'mm/dd/yy';
+    if (worksheet['B8'] && worksheet['B8'].t === 'd') worksheet['B8'].z = 'mm/dd/yy';
+    if (worksheet['B9'] && worksheet['B9'].t === 'd') worksheet['B9'].z = 'mm/dd/yy';
+
+    // Style Info Keys (Rows 3 to 19, i.e., indices 2 to 18)
+    for (let r = 2; r <= 18; r++) {
+      const keyCell = XLSX.utils.encode_cell({ r, c: 0 });
+      if (worksheet[keyCell]) {
+        worksheet[keyCell].s = {
+          font: { bold: true, color: { rgb: "374151" } },
+          fill: { fgColor: { rgb: "F3F4F6" } },
+          border: {
+            top: { style: 'thin', color: { rgb: "E5E7EB" } },
+            bottom: { style: 'thin', color: { rgb: "E5E7EB" } },
+            left: { style: 'thin', color: { rgb: "E5E7EB" } },
+            right: { style: 'thin', color: { rgb: "E5E7EB" } }
+          },
+          alignment: { horizontal: "center", vertical: "center", wrapText: true }
+        };
+      }
+      const valCell = XLSX.utils.encode_cell({ r, c: 1 });
+      if (worksheet[valCell]) {
+        worksheet[valCell].s = {
+          border: {
+            top: { style: 'thin', color: { rgb: "E5E7EB" } },
+            bottom: { style: 'thin', color: { rgb: "E5E7EB" } },
+            left: { style: 'thin', color: { rgb: "E5E7EB" } },
+            right: { style: 'thin', color: { rgb: "E5E7EB" } }
+          },
+          alignment: { horizontal: "center", vertical: "center", wrapText: true }
+        };
+      }
+      worksheet['!merges'].push({ s: { r, c: 1 }, e: { r, c: 3 } });
+    }
+
+    // Style Main Table Headers (Row 21, i.e., index 20)
+    for (let c = 0; c < 9; c++) {
+      const cell = XLSX.utils.encode_cell({ r: 20, c });
+      if (worksheet[cell]) {
+        worksheet[cell].s = {
+          font: { bold: true, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "1E3A8A" } },
+          alignment: { horizontal: "center", vertical: "center", wrapText: true },
+          border: {
+            top: { style: 'thin', color: { rgb: "D1D5DB" } },
+            bottom: { style: 'thin', color: { rgb: "D1D5DB" } },
+            left: { style: 'thin', color: { rgb: "D1D5DB" } },
+            right: { style: 'thin', color: { rgb: "D1D5DB" } }
+          }
+        };
+      }
+    }
+
+    // Style Main Table Rows (Row 22+, i.e., index 21+)
+    const numRows = 21 + getSortedEvents().length;
+    for (let r = 21; r < numRows; r++) {
+      for (let c = 0; c < 9; c++) {
+        const cell = XLSX.utils.encode_cell({ r, c });
+        if (!worksheet[cell]) {
+          worksheet[cell] = { t: 's', v: '' }; // Create empty cell to apply style
         }
-      });
-    });
-    worksheet['!cols'] = colWidths.map(w => ({ wch: Math.min(Math.max(w + 2, 10), 60) }));
+        worksheet[cell].s = {
+          alignment: { horizontal: "center", vertical: "center", wrapText: true },
+          border: {
+            top: { style: 'thin', color: { rgb: "E5E7EB" } },
+            bottom: { style: 'thin', color: { rgb: "E5E7EB" } },
+            left: { style: 'thin', color: { rgb: "E5E7EB" } },
+            right: { style: 'thin', color: { rgb: "E5E7EB" } }
+          },
+          fill: r % 2 === 0 ? { fgColor: { rgb: "FFFFFF" } } : { fgColor: { rgb: "F9FAFB" } }
+        };
+        // Ensure date column is formatted properly if it contains a Date object
+        if (c === 0 && worksheet[cell].t === 'd') {
+          worksheet[cell].z = 'mm/dd/yy';
+        }
+      }
+    }
+
+    const colWidths = [15, 15, 15, 40, 15, 10, 12, 12, 25]; // Adjusted widths
+    worksheet['!cols'] = colWidths.map(w => ({ wch: w }));
     
     // Format to print on 8.5 x 11 paper (paperSize 1 is Letter), Landscape, fit to 1 page wide
     worksheet['!pageSetup'] = { paperSize: 1, orientation: 'landscape', fitToWidth: 1, fitToHeight: 0 };
