@@ -17,7 +17,7 @@ interface TimelineEvent {
   base: 'Acceptance' | 'Closing' | 'Custom';
   customDate?: string;
   manualDate?: string;
-  completed?: boolean;
+  completedDate?: string;
   notes?: string;
 }
 
@@ -354,7 +354,7 @@ export default function TimelineCreator() {
       ['Land Court', landCourt ? 'Yes' : 'No'],
       ['Other Information', otherInformation],
       [],
-      ['Due Date', 'Contingency #', 'Party', 'Task', 'Done', 'Days', 'Direction', 'Base', 'Notes'],
+      ['Due Date', 'Contingency #', 'Party', 'Task', 'Date Completed', 'Days', 'Direction', 'Base', 'Notes'],
       ...getSortedEvents().map((event, index) => {
         const rowNum = 16 + index;
         const calcDate = calculateDate(event);
@@ -362,7 +362,7 @@ export default function TimelineCreator() {
         let dateCell: any = calcDate || 'TBD';
         if (event.direction !== 'Custom Date') {
           const formulaStr = `IF(H${rowNum}="Acceptance",IF($B$4="TBD","TBD",IF(G${rowNum}="After",$B$4+F${rowNum},$B$4-F${rowNum})),IF(H${rowNum}="Closing",IF($B$5="TBD","TBD",IF(G${rowNum}="After",$B$5+F${rowNum},$B$5-F${rowNum})),"TBD"))`;
-          dateCell = { f: formulaStr, v: calcDate || 'TBD', z: 'mm/dd/yyyy' };
+          dateCell = { f: formulaStr, v: calcDate || 'TBD', z: 'mm/dd/yy' };
         }
 
         return [
@@ -370,7 +370,7 @@ export default function TimelineCreator() {
           event.contingency || '',
           event.party || '',
           event.task,
-          event.completed ? 'Yes' : 'No',
+          event.completedDate || '',
           event.direction === 'Custom Date' ? 'N/A' : event.days,
           event.direction,
           event.direction === 'Custom Date' ? 'N/A' : event.base,
@@ -381,8 +381,8 @@ export default function TimelineCreator() {
 
     const worksheet = XLSX.utils.aoa_to_sheet(wsData, { cellDates: true });
     
-    if (worksheet['B4'] && worksheet['B4'].t === 'd') worksheet['B4'].z = 'mm/dd/yyyy';
-    if (worksheet['B5'] && worksheet['B5'].t === 'd') worksheet['B5'].z = 'mm/dd/yyyy';
+    if (worksheet['B4'] && worksheet['B4'].t === 'd') worksheet['B4'].z = 'mm/dd/yy';
+    if (worksheet['B5'] && worksheet['B5'].t === 'd') worksheet['B5'].z = 'mm/dd/yy';
 
     const colWidths = [15, 15, 15, 40, 10, 10, 10, 12, 20]; // Minimum widths
     wsData.forEach(row => {
@@ -443,9 +443,9 @@ export default function TimelineCreator() {
     drawField('Title & Escrow:', titleEscrow, 14, 47);
     drawField('Escrow #:', escrowNumber, 14, 53);
 
-    drawField('Acceptance Date:', acceptanceDate ? format(parseISO(acceptanceDate), 'MMM d, yyyy') : 'TBD', 85, 35);
-    drawField('Closing Date:', closingDate ? format(parseISO(closingDate), 'MMM d, yyyy') : 'TBD', 85, 41);
-    drawField('Contract Date:', contractDate ? format(parseISO(contractDate), 'MMM d, yyyy') : 'TBD', 85, 47);
+    drawField('Acceptance Date:', acceptanceDate ? format(parseISO(acceptanceDate), 'MM/dd/yy') : 'TBD', 85, 35);
+    drawField('Closing Date:', closingDate ? format(parseISO(closingDate), 'MM/dd/yy') : 'TBD', 85, 41);
+    drawField('Contract Date:', contractDate ? format(parseISO(contractDate), 'MM/dd/yy') : 'TBD', 85, 47);
     drawField('Sales Price:', salesPrice, 85, 53);
 
     drawField('Listing Agent:', listingAgent, 150, 35);
@@ -468,14 +468,14 @@ export default function TimelineCreator() {
       let dateStr = 'Needs base date';
       if (event.direction === 'Custom Date') {
         dateStr = event.manualDate && isValid(parseISO(event.manualDate)) 
-          ? format(parseISO(event.manualDate), 'MMM d, yyyy') 
+          ? format(parseISO(event.manualDate), 'MM/dd/yy') 
           : 'N/A';
       } else if (calcDate) {
-        dateStr = format(calcDate, 'MMM d, yyyy');
+        dateStr = format(calcDate, 'MM/dd/yy');
       }
         
       return [
-        event.completed ? 'Yes' : 'No',
+        event.completedDate || '',
         event.contingency || '',
         event.party || '',
         event.task,
@@ -489,7 +489,7 @@ export default function TimelineCreator() {
 
     autoTable(doc, {
       startY,
-      head: [['Done', 'Cont.', 'Party', 'Task', 'Days', 'Dir.', 'Base Date', 'Due Date', 'Notes']],
+      head: [['Date Completed', 'Cont.', 'Party', 'Task', 'Days', 'Dir.', 'Base Date', 'Due Date', 'Notes']],
       body: tableData,
       theme: 'striped',
       headStyles: { fillColor: [15, 23, 42] }, // slate-900
@@ -804,7 +804,7 @@ export default function TimelineCreator() {
         <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 text-sm">
-              <th className="p-3 font-semibold w-12 text-center">Done</th>
+              <th className="p-3 font-semibold w-24 text-center">Date Completed</th>
               <th 
                 className="p-3 font-semibold w-24 cursor-pointer hover:bg-slate-200 transition-colors group" 
                 onClick={() => setSortBy(prev => prev === 'contingency' ? 'default' : 'contingency')}
@@ -840,13 +840,14 @@ export default function TimelineCreator() {
             {getSortedEvents().map((event) => {
               const calcDate = calculateDate(event);
               return (
-                <tr key={event.id} className={`border-b border-slate-100 hover:bg-slate-50 group ${event.completed ? 'opacity-60 bg-slate-50/50' : ''}`}>
+                <tr key={event.id} className={`border-b border-slate-100 hover:bg-slate-50 group ${event.completedDate ? 'opacity-60 bg-slate-50/50' : ''}`}>
                   <td className="p-2 text-center">
                     <input 
-                      type="checkbox" 
-                      checked={!!event.completed}
-                      onChange={e => updateEvent(event.id, { completed: e.target.checked })}
-                      className="rounded border-slate-300 text-green-600 focus:ring-green-500 w-5 h-5 cursor-pointer"
+                      type="text" 
+                      value={event.completedDate || ''}
+                      onChange={e => updateEvent(event.id, { completedDate: e.target.value })}
+                      className="w-20 bg-transparent border-slate-300 rounded text-center text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      placeholder="MM/DD/YY"
                     />
                   </td>
                   <td className="p-2">
@@ -860,7 +861,7 @@ export default function TimelineCreator() {
                             task: isK1 ? 'Staking' : 'Survey' 
                           });
                         }}
-                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completed ? 'line-through text-slate-500' : ''}`}
+                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completedDate ? 'line-through text-slate-500' : ''}`}
                       >
                         <option value="K-1">K-1</option>
                         <option value="K-2">K-2</option>
@@ -875,7 +876,7 @@ export default function TimelineCreator() {
                             task: isJ9A ? 'Cleaning before Closing' : 'Cleaning Credit' 
                           });
                         }}
-                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completed ? 'line-through text-slate-500' : ''}`}
+                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completedDate ? 'line-through text-slate-500' : ''}`}
                       >
                         <option value="J-9(a)">J-9(a)</option>
                         <option value="J-9(b)">J-9(b)</option>
@@ -890,7 +891,7 @@ export default function TimelineCreator() {
                             task: isF3A ? 'Change to the Closing Date Unilateral Right to Extend' : 'Change to the Closing Date - Time is of the Essence' 
                           });
                         }}
-                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completed ? 'line-through text-slate-500' : ''}`}
+                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completedDate ? 'line-through text-slate-500' : ''}`}
                       >
                         <option value="F-3(a)">F-3(a)</option>
                         <option value="F-3(b)">F-3(b)</option>
@@ -900,7 +901,7 @@ export default function TimelineCreator() {
                         type="text"
                         value={event.contingency || ''}
                         onChange={e => updateEvent(event.id, { contingency: e.target.value })}
-                        className={`w-full bg-transparent border-0 border-b border-transparent focus:border-blue-500 focus:ring-0 px-2 py-1 ${event.completed ? 'line-through text-slate-500' : ''}`}
+                        className={`w-full bg-transparent border-0 border-b border-transparent focus:border-blue-500 focus:ring-0 px-2 py-1 ${event.completedDate ? 'line-through text-slate-500' : ''}`}
                         placeholder="e.g. J-1"
                       />
                     )}
@@ -922,7 +923,7 @@ export default function TimelineCreator() {
                       type="text"
                       value={event.task}
                       onChange={e => updateEvent(event.id, { task: e.target.value })}
-                      className={`w-full bg-transparent border-0 border-b border-transparent focus:border-blue-500 focus:ring-0 px-2 py-1 text-xs ${event.completed ? 'line-through text-slate-500' : ''}`}
+                      className={`w-full bg-transparent border-0 border-b border-transparent focus:border-blue-500 focus:ring-0 px-2 py-1 text-xs ${event.completedDate ? 'line-through text-slate-500' : ''}`}
                       placeholder="Task description"
                     />
                   </td>                  <td className="p-2">
@@ -979,7 +980,7 @@ export default function TimelineCreator() {
                       />
                     ) : calcDate ? (
                       <span className="text-slate-800 bg-slate-100 px-2 py-1 rounded">
-                        {format(calcDate, 'MMM d, yyyy')}
+                        {format(calcDate, 'MM/dd/yy')}
                       </span>
                     ) : (
                       <span className="text-slate-400 italic">Needs base date</span>
@@ -990,7 +991,7 @@ export default function TimelineCreator() {
                       type="text" 
                       value={event.notes || ''}
                       onChange={e => updateEvent(event.id, { notes: e.target.value })}
-                      className={`w-full bg-transparent border-0 border-b border-transparent focus:border-blue-500 focus:ring-0 px-2 py-1 ${event.completed ? 'line-through text-slate-500' : ''}`}
+                      className={`w-full bg-transparent border-0 border-b border-transparent focus:border-blue-500 focus:ring-0 px-2 py-1 ${event.completedDate ? 'line-through text-slate-500' : ''}`}
                       placeholder="Notes..."
                     />
                   </td>
