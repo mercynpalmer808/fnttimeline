@@ -56,8 +56,7 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: 'j9a', contingency: 'J-9(a)', task: 'Cleaning before Closing', days: 5, direction: 'Before', base: 'Closing' },
   { id: 'j9b', contingency: 'J-9(b)', task: 'Cleaning Credit', days: 5, direction: 'Before', base: 'Closing' },
   { id: 'j10', contingency: 'J-10', task: 'Animal Related Treatment', days: 5, direction: 'Before', base: 'Closing' },
-  { id: 'k1', contingency: 'K-1', task: 'Staking', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'k2', contingency: 'K-2', task: 'Survey', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'k_staking_survey', contingency: 'K-1', task: 'Staking', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'k3a', contingency: 'K-3(a)', task: 'Boundary Encroachment(terminate)', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'k3b', contingency: 'K-3(b)', task: 'Boundary Encroachment(Remedied)', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'l2a', contingency: 'L-2(a)', task: 'Select Termite Company', days: 14, direction: 'After', base: 'Acceptance' },
@@ -853,15 +852,31 @@ export default function TimelineCreator() {
                     />
                   </td>
                   <td className="p-2">
-                    <input 
-                      type="text" 
-                      value={event.contingency || ''}
-                      onChange={e => updateEvent(event.id, { contingency: e.target.value })}
-                      className={`w-full bg-transparent border-0 border-b border-transparent focus:border-blue-500 focus:ring-0 px-2 py-1 ${event.completed ? 'line-through text-slate-500' : ''}`}
-                      placeholder="e.g. J-1"
-                    />
-                  </td>
-                  <td className="p-2">
+                    {event.id === 'k_staking_survey' ? (
+                      <select
+                        value={event.contingency}
+                        onChange={e => {
+                          const isK1 = e.target.value === 'K-1';
+                          updateEvent(event.id, { 
+                            contingency: isK1 ? 'K-1' : 'K-2', 
+                            task: isK1 ? 'Staking' : 'Survey' 
+                          });
+                        }}
+                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completed ? 'line-through text-slate-500' : ''}`}
+                      >
+                        <option value="K-1">K-1</option>
+                        <option value="K-2">K-2</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={event.contingency || ''}
+                        onChange={e => updateEvent(event.id, { contingency: e.target.value })}
+                        className={`w-full bg-transparent border-0 border-b border-transparent focus:border-blue-500 focus:ring-0 px-2 py-1 ${event.completed ? 'line-through text-slate-500' : ''}`}
+                        placeholder="e.g. J-1"
+                      />
+                    )}
+                  </td>                  <td className="p-2">
                     <select
                       value={event.party || ''}
                       onChange={e => updateEvent(event.id, { party: e.target.value as any })}
@@ -875,15 +890,14 @@ export default function TimelineCreator() {
                     </select>
                   </td>
                   <td className="p-2">
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={event.task}
                       onChange={e => updateEvent(event.id, { task: e.target.value })}
                       className={`w-full bg-transparent border-0 border-b border-transparent focus:border-blue-500 focus:ring-0 px-2 py-1 text-xs ${event.completed ? 'line-through text-slate-500' : ''}`}
                       placeholder="Task description"
                     />
-                  </td>
-                  <td className="p-2">
+                  </td>                  <td className="p-2">
                     {event.direction !== 'Custom Date' && (
                       <input 
                         type="number" 
