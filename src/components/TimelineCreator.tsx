@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import * as XLSX from 'xlsx-js-style';
+import ExcelJS from 'exceljs';
+import pkg from 'file-saver';
+const { saveAs } = pkg;
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { addDays, subDays, format, parseISO, isValid } from 'date-fns';
@@ -330,156 +332,204 @@ export default function TimelineCreator() {
     }
   };
 
-  const handleExport = () => {
-    const excelAcceptanceDate = acceptanceDate ? parseISO(acceptanceDate) : 'TBD';
-    const excelClosingDate = closingDate ? parseISO(closingDate) : 'TBD';
-    const excelContractDate = contractDate ? parseISO(contractDate) : 'TBD';
+  const handleExport = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Timeline');
 
-    const wsData = [
-      ['PURCHASE CONTRACT TIMELINE'],
-      [],
-      ['Property Address', propertyAddress],
-      ['Tenure', tenure],
-      ['Title Company & Escrow Officer', titleEscrow],
-      ['Escrow #', escrowNumber],
-      ['Acceptance Date', excelAcceptanceDate],
-      ['Closing Date', excelClosingDate],
-      ['Contract Date', excelContractDate],
-      ['Sales Price', salesPrice],
-      ['Listing Agent', listingAgent],
-      ['Buyer Agent', buyersAgent],
-      ['Lender Info', lenderInfo],
-      ['Seller/Buyer Info', sellerBuyerInfo],
-      ['Financing', Object.entries(financing).filter(e => e[1]).map(e => e[0]).join(', ')],
-      ['HARPTA', harpta ? 'Yes' : 'No'],
-      ['FIRPTA', firpta ? 'Yes' : 'No'],
-      ['Land Court', landCourt ? 'Yes' : 'No'],
-      ['Other Information', otherInformation],
-      [],
-      ['Due Date', 'Contingency #', 'Party', 'Task', 'Date Completed', 'Days', 'Direction', 'Base', 'Notes'],
-      ...getSortedEvents().map((event, index) => {
-        const rowNum = 22 + index;
-        const calcDate = calculateDate(event);
-        
-        let dateCell: any = calcDate || 'TBD';
-        if (event.direction !== 'Custom Date') {
-          const formulaStr = `IF(H${rowNum}="Acceptance",IF($B$7="TBD","TBD",IF(G${rowNum}="After",$B$7+F${rowNum},$B$7-F${rowNum})),IF(H${rowNum}="Closing",IF($B$8="TBD","TBD",IF(G${rowNum}="After",$B$8+F${rowNum},$B$8-F${rowNum})),"TBD"))`;
-          dateCell = { f: formulaStr, v: calcDate || 'TBD', z: 'mm/dd/yy' };
-        }
+    // Format to print on 8.5 x 11 paper (Letter), Portrait, fit to 1 page wide
+    worksheet.pageSetup.paperSize = 1 as any;
+    worksheet.pageSetup.orientation = 'portrait';
+    worksheet.pageSetup.fitToPage = true;
+    worksheet.pageSetup.fitToWidth = 1;
+    worksheet.pageSetup.fitToHeight = 0;
+    worksheet.pageSetup.margins = {
+      left: 0.2, right: 0.2,
+      top: 0.25, bottom: 0.25,
+      header: 0.2, footer: 0.2
+    };
 
-        return [
-          dateCell,
-          event.contingency || '',
-          event.party || '',
-          event.task,
-          event.completedDate || '',
-          event.direction === 'Custom Date' ? 'N/A' : event.days,
-          event.direction,
-          event.direction === 'Custom Date' ? 'N/A' : event.base,
-          event.notes || ''
-        ];
-      })
+    // Columns adjusted for portrait layout
+    worksheet.columns = [
+      { width: 11 }, { width: 13 }, { width: 11 }, { width: 25 }, { width: 12 },
+      { width: 6 }, { width: 10 }, { width: 10 }, { width: 15 }
     ];
 
-    const worksheet = XLSX.utils.aoa_to_sheet(wsData, { cellDates: true });
-    
-    // Style Title
-    if (worksheet['A1']) {
-      worksheet['A1'].s = {
-        font: { name: 'Arial', sz: 16, bold: true, color: { rgb: "1E3A8A" } },
-        alignment: { horizontal: "center", vertical: "center" }
+    // Add empty rows for header spacing
+    worksheet.addRow([]);
+    worksheet.addRow([]);
+    worksheet.addRow([]);
+
+    // Merge cells for the title to sit to the right of the logo
+    worksheet.mergeCells('D1:I3');
+    const titleCell = worksheet.getCell('D1');
+    titleCell.value = 'Purchase Contract Timeline';
+    titleCell.font = { name: 'Arial', size: 18, bold: true, color: { argb: 'FF1E3A8A' } };
+    titleCell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+    try {
+      const response = await fetch('/fidelity-logo.png');
+      const blob = await response.blob();
+      const arrayBuffer = await blob.arrayBuffer();
+      const imageId = workbook.addImage({
+        buffer: arrayBuffer,
+        extension: 'png',
+      });
+      worksheet.addImage(imageId, {
+        tl: { col: 0, row: 0 },
+        ext: { width: 180, height: 40 }
+      });
+    } catch (e) {
+      console.error("Could not load logo for Excel", e);
+    }
+
+    worksheet.addRow([]);
+
+    let acceptanceCellRef = '$C$10';
+    let closingCellRef = '$C$11';
+
+    const addInfoRowTwoCols = (
+      leftLabel: string, leftValue: any, leftIsDate: boolean,
+      rightLabel: string | null, rightValue: any, rightIsDate: boolean
+    ) => {
+      const row = worksheet.addRow([]);
+      
+      row.getCell(1).value = leftLabel;
+      worksheet.mergeCells(`A${row.number}:B${row.number}`);
+      row.getCell(3).value = leftValue;
+      worksheet.mergeCells(`C${row.number}:D${row.number}`);
+
+      if (leftLabel === 'Acceptance Date') acceptanceCellRef = `$C$${row.number}`;
+      if (leftLabel === 'Closing Date') closingCellRef = `$C$${row.number}`;
+      
+      const formatLabelCell = (col1: number, col2: number) => {
+        const cell = row.getCell(col1);
+        cell.font = { size: 9, bold: true, color: { argb: 'FF374151' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+        cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+        for (let c = col1; c <= col2; c++) {
+          row.getCell(c).border = { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
+        }
       };
-    }
-    worksheet['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
 
-    // Format info dates
-    if (worksheet['B7'] && worksheet['B7'].t === 'd') worksheet['B7'].z = 'mm/dd/yy';
-    if (worksheet['B8'] && worksheet['B8'].t === 'd') worksheet['B8'].z = 'mm/dd/yy';
-    if (worksheet['B9'] && worksheet['B9'].t === 'd') worksheet['B9'].z = 'mm/dd/yy';
-
-    // Style Info Keys (Rows 3 to 19, i.e., indices 2 to 18)
-    for (let r = 2; r <= 18; r++) {
-      const keyCell = XLSX.utils.encode_cell({ r, c: 0 });
-      if (worksheet[keyCell]) {
-        worksheet[keyCell].s = {
-          font: { bold: true, color: { rgb: "374151" } },
-          fill: { fgColor: { rgb: "F3F4F6" } },
-          border: {
-            top: { style: 'thin', color: { rgb: "E5E7EB" } },
-            bottom: { style: 'thin', color: { rgb: "E5E7EB" } },
-            left: { style: 'thin', color: { rgb: "E5E7EB" } },
-            right: { style: 'thin', color: { rgb: "E5E7EB" } }
-          },
-          alignment: { horizontal: "center", vertical: "center", wrapText: true }
-        };
-      }
-      const valCell = XLSX.utils.encode_cell({ r, c: 1 });
-      if (worksheet[valCell]) {
-        worksheet[valCell].s = {
-          border: {
-            top: { style: 'thin', color: { rgb: "E5E7EB" } },
-            bottom: { style: 'thin', color: { rgb: "E5E7EB" } },
-            left: { style: 'thin', color: { rgb: "E5E7EB" } },
-            right: { style: 'thin', color: { rgb: "E5E7EB" } }
-          },
-          alignment: { horizontal: "center", vertical: "center", wrapText: true }
-        };
-      }
-      worksheet['!merges'].push({ s: { r, c: 1 }, e: { r, c: 3 } });
-    }
-
-    // Style Main Table Headers (Row 21, i.e., index 20)
-    for (let c = 0; c < 9; c++) {
-      const cell = XLSX.utils.encode_cell({ r: 20, c });
-      if (worksheet[cell]) {
-        worksheet[cell].s = {
-          font: { bold: true, color: { rgb: "FFFFFF" } },
-          fill: { fgColor: { rgb: "1E3A8A" } },
-          alignment: { horizontal: "center", vertical: "center", wrapText: true },
-          border: {
-            top: { style: 'thin', color: { rgb: "D1D5DB" } },
-            bottom: { style: 'thin', color: { rgb: "D1D5DB" } },
-            left: { style: 'thin', color: { rgb: "D1D5DB" } },
-            right: { style: 'thin', color: { rgb: "D1D5DB" } }
-          }
-        };
-      }
-    }
-
-    // Style Main Table Rows (Row 22+, i.e., index 21+)
-    const numRows = 21 + getSortedEvents().length;
-    for (let r = 21; r < numRows; r++) {
-      for (let c = 0; c < 9; c++) {
-        const cell = XLSX.utils.encode_cell({ r, c });
-        if (!worksheet[cell]) {
-          worksheet[cell] = { t: 's', v: '' }; // Create empty cell to apply style
+      const formatValueCell = (col1: number, col2: number, isDate: boolean) => {
+        const cell = row.getCell(col1);
+        cell.font = { size: 9 };
+        cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+        if (isDate && cell.value !== 'TBD') cell.numFmt = 'mm/dd/yy';
+        for (let c = col1; c <= col2; c++) {
+          row.getCell(c).border = { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
         }
-        worksheet[cell].s = {
-          alignment: { horizontal: "center", vertical: "center", wrapText: true },
-          border: {
-            top: { style: 'thin', color: { rgb: "E5E7EB" } },
-            bottom: { style: 'thin', color: { rgb: "E5E7EB" } },
-            left: { style: 'thin', color: { rgb: "E5E7EB" } },
-            right: { style: 'thin', color: { rgb: "E5E7EB" } }
-          },
-          fill: r % 2 === 0 ? { fgColor: { rgb: "FFFFFF" } } : { fgColor: { rgb: "F9FAFB" } }
-        };
-        // Ensure date column is formatted properly if it contains a Date object
-        if (c === 0 && worksheet[cell].t === 'd') {
-          worksheet[cell].z = 'mm/dd/yy';
-        }
+      };
+
+      formatLabelCell(1, 2);
+      formatValueCell(3, 4, leftIsDate);
+
+      if (rightLabel !== null) {
+        row.getCell(5).value = rightLabel;
+        worksheet.mergeCells(`E${row.number}:F${row.number}`);
+        row.getCell(7).value = rightValue;
+        worksheet.mergeCells(`G${row.number}:I${row.number}`);
+
+        if (rightLabel === 'Acceptance Date') acceptanceCellRef = `$G$${row.number}`;
+        if (rightLabel === 'Closing Date') closingCellRef = `$G$${row.number}`;
+
+        formatLabelCell(5, 6);
+        formatValueCell(7, 9, rightIsDate);
       }
+    };
+
+    const excelAcceptanceDate = acceptanceDate ? new Date(parseISO(acceptanceDate).getTime() + parseISO(acceptanceDate).getTimezoneOffset() * 60000) : 'TBD';
+    const excelClosingDate = closingDate ? new Date(parseISO(closingDate).getTime() + parseISO(closingDate).getTimezoneOffset() * 60000) : 'TBD';
+    const excelContractDate = contractDate ? new Date(parseISO(contractDate).getTime() + parseISO(contractDate).getTimezoneOffset() * 60000) : 'TBD';
+
+    addInfoRowTwoCols('Property Address', propertyAddress, false, 'Listing Agent', listingAgent, false);
+    addInfoRowTwoCols('Tenure', tenure, false, 'Buyer Agent', buyersAgent, false);
+    addInfoRowTwoCols('Title Company & Escrow Officer', titleEscrow, false, 'Lender Info', lenderInfo, false);
+    addInfoRowTwoCols('Escrow #', escrowNumber, false, 'Seller/Buyer Info', sellerBuyerInfo, false);
+    addInfoRowTwoCols('Acceptance Date', excelAcceptanceDate, true, 'Financing', Object.entries(financing).filter(e => e[1]).map(e => e[0]).join(', '), false);
+    addInfoRowTwoCols('Closing Date', excelClosingDate, true, 'HARPTA', harpta ? 'Yes' : 'No', false);
+    addInfoRowTwoCols('Contract Date', excelContractDate, true, 'FIRPTA', firpta ? 'Yes' : 'No', false);
+    addInfoRowTwoCols('Sales Price', salesPrice, false, 'Land Court', landCourt ? 'Yes' : 'No', false);
+
+    const otherInfoRow = worksheet.addRow([]);
+    otherInfoRow.getCell(1).value = 'Other\nInformation';
+    worksheet.mergeCells(`A${otherInfoRow.number}:B${otherInfoRow.number}`);
+    otherInfoRow.getCell(3).value = otherInformation || '';
+    worksheet.mergeCells(`C${otherInfoRow.number}:I${otherInfoRow.number}`);
+
+    const otherLabelCell = otherInfoRow.getCell(1);
+    otherLabelCell.font = { size: 9, bold: true, color: { argb: 'FF374151' } };
+    otherLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+    otherLabelCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    for (let c = 1; c <= 2; c++) {
+      otherInfoRow.getCell(c).border = { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
     }
 
-    const colWidths = [15, 15, 15, 40, 15, 10, 12, 12, 25]; // Adjusted widths
-    worksheet['!cols'] = colWidths.map(w => ({ wch: w }));
-    
-    // Format to print on 8.5 x 11 paper (paperSize 1 is Letter), Landscape, fit to 1 page wide
-    worksheet['!pageSetup'] = { paperSize: 1, orientation: 'landscape', fitToWidth: 1, fitToHeight: 0 };
+    const otherValueCell = otherInfoRow.getCell(3);
+    otherValueCell.font = { size: 9 };
+    otherValueCell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
+    for (let c = 3; c <= 9; c++) {
+      otherInfoRow.getCell(c).border = { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
+    }
+    otherInfoRow.height = 40;
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Timeline");
-    XLSX.writeFile(workbook, "Purchase_Contract_Timeline.xlsx");
+    worksheet.addRow([]);
+
+    const headerRow = worksheet.addRow(['Due Date', 'Contingency #', 'Party', 'Task', 'Date Completed', 'Days', 'Direction', 'Base', 'Notes']);
+    headerRow.eachCell(cell => {
+      cell.font = { size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = { top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, right: { style: 'thin', color: { argb: 'FFD1D5DB' } } };
+    });
+
+    getSortedEvents().forEach((event, index) => {
+      const calcDate = calculateDate(event);
+      const rowNum = headerRow.number + 1 + index;
+      
+      let dateCellValue: any = calcDate ? new Date(calcDate.getTime() + calcDate.getTimezoneOffset() * 60000) : 'TBD';
+      if (event.direction !== 'Custom Date') {
+        const formulaStr = `IF(H${rowNum}="Acceptance",IF(${acceptanceCellRef}="TBD","TBD",IF(G${rowNum}="After",${acceptanceCellRef}+F${rowNum},${acceptanceCellRef}-F${rowNum})),IF(H${rowNum}="Closing",IF(${closingCellRef}="TBD","TBD",IF(G${rowNum}="After",${closingCellRef}+F${rowNum},${closingCellRef}-F${rowNum})),"TBD"))`;
+        dateCellValue = { formula: formulaStr, result: calcDate ? new Date(calcDate.getTime() + calcDate.getTimezoneOffset() * 60000) : 'TBD' };
+      }
+
+      const row = worksheet.addRow([
+        dateCellValue,
+        event.contingency || '',
+        event.party || '',
+        event.task,
+        event.completedDate || '',
+        event.direction === 'Custom Date' ? 'N/A' : event.days,
+        event.direction,
+        event.direction === 'Custom Date' ? 'N/A' : event.base,
+        event.notes || ''
+      ]);
+
+      const isEven = index % 2 === 0;
+      row.eachCell((cell, colNumber) => {
+        cell.font = { size: 9 };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        cell.border = { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isEven ? 'FFFFFFFF' : 'FFF9FAFB' } };
+        if (colNumber === 1 && calcDate) {
+          cell.numFmt = 'mm/dd/yy';
+        }
+      });
+    });
+
+    worksheet.addRow([]);
+    worksheet.addRow([]);
+    const disclosureRow = worksheet.addRow([
+      "Disclosure: This timeline is based on the Hawai'i Association of REALTORS(R) Purchase Contract, Revision 2/25. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties."
+    ]);
+    worksheet.mergeCells(`A${disclosureRow.number}:I${disclosureRow.number}`);
+    disclosureRow.getCell(1).font = { italic: true, size: 9, color: { argb: 'FF6B7280' } };
+    disclosureRow.getCell(1).alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
+    disclosureRow.height = 40;
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, "Purchase_Contract_Timeline.xlsx");
   };
 
   const handlePdfExport = async () => {
