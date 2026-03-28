@@ -525,7 +525,7 @@ export default function TimelineCreator() {
     worksheet.mergeCells(`A${disclosureRow.number}:I${disclosureRow.number}`);
     disclosureRow.getCell(1).font = { italic: true, size: 9, color: { argb: 'FF6B7280' } };
     disclosureRow.getCell(1).alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
-    disclosureRow.height = 40;
+    disclosureRow.height = 80;
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
