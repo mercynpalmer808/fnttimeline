@@ -89,7 +89,8 @@ export default function TimelineCreator() {
 
   const [listingAgent, setListingAgent] = useState('');
   const [buyersAgent, setBuyersAgent] = useState('');
-  const [sellerBuyerInfo, setSellerBuyerInfo] = useState('');
+  const [sellerInfo, setSellerInfo] = useState('');
+  const [buyerInfo, setBuyerInfo] = useState('');
   const [lenderInfo, setLenderInfo] = useState('');
 
   const [financing, setFinancing] = useState<Record<FinancingType, boolean>>({
@@ -117,7 +118,8 @@ export default function TimelineCreator() {
       setEscrowNumber('');
       setListingAgent('');
       setBuyersAgent('');
-      setSellerBuyerInfo('');
+      setSellerInfo('');
+      setBuyerInfo('');
       setLenderInfo('');
       setFinancing({ 'Cash': false, 'Loan': false, '1031 Exchange': false });
       setHarpta(false);
@@ -223,7 +225,8 @@ export default function TimelineCreator() {
           escrowNumber,
           listingAgent,
           buyersAgent,
-          sellerBuyerInfo,
+          sellerInfo,
+          buyerInfo,
           lenderInfo,
           financing,
           harpta,
@@ -313,7 +316,8 @@ export default function TimelineCreator() {
             setEscrowNumber(loadedData.escrowNumber || '');
             setListingAgent(loadedData.listingAgent || '');
             setBuyersAgent(loadedData.buyersAgent || '');
-            setSellerBuyerInfo(loadedData.sellerBuyerInfo || '');
+            setSellerInfo(loadedData.sellerInfo || '');
+            setBuyerInfo(loadedData.buyerInfo || '');
             setLenderInfo(loadedData.lenderInfo || '');
             setFinancing(loadedData.financing || { 'Cash': false, 'Loan': false, '1031 Exchange': false });
             setHarpta(loadedData.harpta || false);
@@ -441,14 +445,14 @@ export default function TimelineCreator() {
     const excelClosingDate = closingDate ? new Date(parseISO(closingDate).getTime() + parseISO(closingDate).getTimezoneOffset() * 60000) : 'TBD';
     const excelContractDate = contractDate ? new Date(parseISO(contractDate).getTime() + parseISO(contractDate).getTimezoneOffset() * 60000) : 'TBD';
 
-    addInfoRowTwoCols('Property Address', propertyAddress, false, 'Listing Agent', listingAgent, false);
-    addInfoRowTwoCols('Tenure', tenure, false, 'Buyer Agent', buyersAgent, false);
-    addInfoRowTwoCols('Title Company & Escrow Officer', titleEscrow, false, 'Lender Info', lenderInfo, false);
-    addInfoRowTwoCols('Escrow #', escrowNumber, false, 'Seller/Buyer Info', sellerBuyerInfo, false);
-    addInfoRowTwoCols('Acceptance Date', excelAcceptanceDate, true, 'Financing', Object.entries(financing).filter(e => e[1]).map(e => e[0]).join(', '), false);
-    addInfoRowTwoCols('Closing Date', excelClosingDate, true, 'HARPTA', harpta ? 'Yes' : 'No', false);
-    addInfoRowTwoCols('Contract Date', excelContractDate, true, 'FIRPTA', firpta ? 'Yes' : 'No', false);
-    addInfoRowTwoCols('Sales Price', salesPrice, false, 'Land Court', landCourt ? 'Yes' : 'No', false);
+    addInfoRowTwoCols('Property Address', propertyAddress, false, 'Sales Price', salesPrice, false);
+    addInfoRowTwoCols('Title Co & Escrow Officer', titleEscrow, false, 'Escrow #', escrowNumber, false);
+    addInfoRowTwoCols('Listing Agent', listingAgent, false, 'Seller Info', sellerInfo, false);
+    addInfoRowTwoCols('Buyers Agent', buyersAgent, false, 'Buyer Info', buyerInfo, false);
+    addInfoRowTwoCols('Financing', Object.entries(financing).filter(e => e[1]).map(e => e[0]).join(', ') || 'None', false, 'Lender Info', lenderInfo, false);
+    addInfoRowTwoCols('Tenure', tenure, false, 'Tax & Recording', [harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : '', landCourt ? 'Land Court' : ''].filter(Boolean).join(', ') || 'None', false);
+    addInfoRowTwoCols('Acceptance Date', excelAcceptanceDate, true, 'Closing Date', excelClosingDate, true);
+    addInfoRowTwoCols('Contract Date', excelContractDate, true, null, null, false);
 
     const otherInfoRow = worksheet.addRow([]);
     otherInfoRow.getCell(1).value = 'Other\nInformation';
@@ -598,34 +602,41 @@ export default function TimelineCreator() {
     };
 
     renderRow([
-      { label: 'Property Address:', value: propertyAddress, x: 14, nextX: 85 },
-      { label: 'Acceptance Date:', value: acceptanceDate ? format(parseISO(acceptanceDate), 'MM/dd/yy') : 'TBD', x: 85, nextX: 150 },
-      { label: 'Listing Agent:', value: listingAgent, x: 150, nextX: 205 }
+      { label: 'Property Address:', value: propertyAddress, x: 14, nextX: 110 },
+      { label: 'Sales Price:', value: salesPrice, x: 110, nextX: 205 }
     ]);
 
     renderRow([
-      { label: 'Tenure:', value: tenure, x: 14, nextX: 85 },
-      { label: 'Closing Date:', value: closingDate ? format(parseISO(closingDate), 'MM/dd/yy') : 'TBD', x: 85, nextX: 150 },
-      { label: 'Buyers Agent:', value: buyersAgent, x: 150, nextX: 205 }
+      { label: 'Title Co & Escrow Officer:', value: titleEscrow, x: 14, nextX: 110 },
+      { label: 'Escrow #:', value: escrowNumber, x: 110, nextX: 205 }
     ]);
 
     renderRow([
-      { label: 'Title & Escrow:', value: titleEscrow, x: 14, nextX: 85 },
-      { label: 'Contract Date:', value: contractDate ? format(parseISO(contractDate), 'MM/dd/yy') : 'TBD', x: 85, nextX: 150 },
-      { label: 'Lender Info:', value: lenderInfo, x: 150, nextX: 205 }
+      { label: 'Listing Agent:', value: listingAgent, x: 14, nextX: 110 },
+      { label: 'Seller Info:', value: sellerInfo, x: 110, nextX: 205 }
     ]);
 
     renderRow([
-      { label: 'Escrow #:', value: escrowNumber, x: 14, nextX: 85 },
-      { label: 'Sales Price:', value: salesPrice, x: 85, nextX: 150 },
-      { label: 'Seller/Buyer Info:', value: sellerBuyerInfo, x: 150, nextX: 205 }
+      { label: 'Buyers Agent:', value: buyersAgent, x: 14, nextX: 110 },
+      { label: 'Buyer Info:', value: buyerInfo, x: 110, nextX: 205 }
     ]);
 
     const financingStr = (Object.keys(financing) as FinancingType[]).filter(k => financing[k]).join(', ');
     renderRow([
-      { label: 'Financing:', value: financingStr || 'None', x: 14, nextX: 85 },
-      { label: 'Tax Withholdings:', value: [harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : ''].filter(Boolean).join(', ') || 'None', x: 85, nextX: 150 },
-      { label: 'Recording:', value: landCourt ? 'Land Court' : 'Regular', x: 150, nextX: 205 }
+      { label: 'Financing:', value: financingStr || 'None', x: 14, nextX: 110 },
+      { label: 'Lender Info:', value: lenderInfo, x: 110, nextX: 205 }
+    ]);
+
+    const taxRecordingStr = [harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : '', landCourt ? 'Land Court' : ''].filter(Boolean).join(', ') || 'None';
+    renderRow([
+      { label: 'Tenure:', value: tenure, x: 14, nextX: 110 },
+      { label: 'Tax & Recording:', value: taxRecordingStr, x: 110, nextX: 205 }
+    ]);
+
+    renderRow([
+      { label: 'Acceptance Date:', value: acceptanceDate ? format(parseISO(acceptanceDate), 'MM/dd/yy') : 'TBD', x: 14, nextX: 85 },
+      { label: 'Closing Date:', value: closingDate ? format(parseISO(closingDate), 'MM/dd/yy') : 'TBD', x: 85, nextX: 150 },
+      { label: 'Contract Date:', value: contractDate ? format(parseISO(contractDate), 'MM/dd/yy') : 'TBD', x: 150, nextX: 205 }
     ]);
 
     if (otherInformation) {
@@ -738,63 +749,16 @@ export default function TimelineCreator() {
         </div>
       </div>
 
-      <div className="bg-slate-50 p-4 rounded-lg mb-8 border border-slate-200">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4">Property & Escrow Details</h2>
+      <div className="bg-slate-50 p-4 rounded-lg mb-6 border border-slate-200">
+        <h2 className="text-lg font-semibold text-slate-800 mb-4">Contract Dates</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Property Address</label>
-            <input
-              type="text"
-              value={propertyAddress}
-              onChange={e => setPropertyAddress(e.target.value)}
-              placeholder="123 Main St..."
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Tenure</label>
-            <select
-              value={tenure}
-              onChange={e => setTenure(e.target.value as '' | 'Fee Simple' | 'Leasehold')}
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
-            >
-              <option value="">Select...</option>
-              <option value="Fee Simple">Fee Simple</option>
-              <option value="Leasehold">Leasehold</option>
-            </select>
-          </div>          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Title Company & Escrow Officer</label>
-            <input 
-              type="text" 
-              value={titleEscrow} 
-              onChange={e => setTitleEscrow(e.target.value)}
-              placeholder="Title Co, Officer Name..."
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Escrow #</label>
-            <input 
-              type="text" 
-              value={escrowNumber} 
-              onChange={e => setEscrowNumber(e.target.value)}
-              placeholder="12345678"
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-slate-800 border-b pb-2">Contract Dates</h2>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Acceptance Date</label>
             <input
               type="date"
               value={acceptanceDate}
               onChange={e => setAcceptanceDate(e.target.value)}
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
+              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
             />
           </div>
           <div>
@@ -803,7 +767,7 @@ export default function TimelineCreator() {
               type="date"
               value={closingDate}
               onChange={e => setClosingDate(e.target.value)}
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
+              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
             />
           </div>
           <div>
@@ -812,132 +776,103 @@ export default function TimelineCreator() {
               type="date"
               value={contractDate}
               onChange={e => setContractDate(e.target.value)}
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Sales Price</label>
-            <input
-              type="text"
-              value={salesPrice}
-              onChange={e => setSalesPrice(e.target.value)}
-              placeholder="$..."
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
+              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
             />
           </div>
         </div>
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-slate-800 border-b pb-2">Parties & Info</h2>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Listing Agent Info</label>
-            <input 
-              type="text" 
-              value={listingAgent} 
-              onChange={e => setListingAgent(e.target.value)}
-              placeholder="Name, Brokerage, Contact..."
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Buyers Agent Info</label>
-            <input 
-              type="text" 
-              value={buyersAgent} 
-              onChange={e => setBuyersAgent(e.target.value)}
-              placeholder="Name, Brokerage, Contact..."
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Lender Info</label>
-            <input
-              type="text"
-              value={lenderInfo}
-              onChange={e => setLenderInfo(e.target.value)}
-              placeholder="Name, Company, Contact..."
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Seller/Buyer Info</label>
-            <input
-              type="text"
-              value={sellerBuyerInfo}
-              onChange={e => setSellerBuyerInfo(e.target.value)}
-              placeholder="Names, Contact Info..."
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
-            />
-          </div>        </div>
       </div>
 
       <div className="bg-slate-50 p-4 rounded-lg mb-8 border border-slate-200">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4">Transaction Details</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div>
-            <span className="block text-sm font-medium text-slate-700 mb-2">Financing Type</span>
-            <div className="space-y-2">
-              {(Object.keys(financing) as FinancingType[]).map(type => (
-                <label key={type} className="flex items-center gap-2 text-sm text-slate-700">
-                  <input 
-                    type="checkbox" 
-                    checked={financing[type]} 
-                    onChange={() => handleFinancingChange(type)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  {type}
+        <h2 className="text-lg font-semibold text-slate-800 mb-4">Contract Details</h2>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Property Address</label>
+              <input type="text" value={propertyAddress} onChange={e => setPropertyAddress(e.target.value)} placeholder="123 Main St..." className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Sales Price</label>
+              <input type="text" value={salesPrice} onChange={e => setSalesPrice(e.target.value)} placeholder="$..." className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Title Company & Escrow Officer</label>
+              <input type="text" value={titleEscrow} onChange={e => setTitleEscrow(e.target.value)} placeholder="Title Co, Officer Name..." className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Escrow #</label>
+              <input type="text" value={escrowNumber} onChange={e => setEscrowNumber(e.target.value)} placeholder="12345678" className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Listing Agent</label>
+              <input type="text" value={listingAgent} onChange={e => setListingAgent(e.target.value)} placeholder="Name, Brokerage, Contact..." className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Seller Info</label>
+              <input type="text" value={sellerInfo} onChange={e => setSellerInfo(e.target.value)} placeholder="Names, Contact Info..." className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Buyers Agent</label>
+              <input type="text" value={buyersAgent} onChange={e => setBuyersAgent(e.target.value)} placeholder="Name, Brokerage, Contact..." className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Buyer Info</label>
+              <input type="text" value={buyerInfo} onChange={e => setBuyerInfo(e.target.value)} placeholder="Names, Contact Info..." className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <span className="block text-sm font-medium text-slate-700 mb-2">Financing Type</span>
+              <div className="flex flex-wrap gap-4">
+                {(Object.keys(financing) as FinancingType[]).map(type => (
+                  <label key={type} className="flex items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" checked={financing[type]} onChange={() => handleFinancingChange(type)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                    {type}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Lender Info</label>
+              <input type="text" value={lenderInfo} onChange={e => setLenderInfo(e.target.value)} placeholder="Name, Company, Contact..." className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Tenure</label>
+              <select value={tenure} onChange={e => setTenure(e.target.value as "" | "Fee Simple" | "Leasehold")} className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white">
+                <option value="">Select...</option>
+                <option value="Fee Simple">Fee Simple</option>
+                <option value="Leasehold">Leasehold</option>
+              </select>
+            </div>
+            <div>
+              <span className="block text-sm font-medium text-slate-700 mb-2">Tax Withholdings</span>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input type="checkbox" checked={harpta} onChange={e => setHarpta(e.target.checked)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" /> HARPTA
                 </label>
-              ))}
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input type="checkbox" checked={firpta} onChange={e => setFirpta(e.target.checked)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" /> FIRPTA
+                </label>
+              </div>
             </div>
-          </div>
-          
-          <div>
-            <span className="block text-sm font-medium text-slate-700 mb-2">Tax Withholdings</span>
-            <div className="space-y-2">
+            <div>
+              <span className="block text-sm font-medium text-slate-700 mb-2">Recording</span>
               <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input 
-                  type="checkbox" 
-                  checked={harpta} 
-                  onChange={e => setHarpta(e.target.checked)}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                HARPTA
-              </label>
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input 
-                  type="checkbox" 
-                  checked={firpta} 
-                  onChange={e => setFirpta(e.target.checked)}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                FIRPTA
+                <input type="checkbox" checked={landCourt} onChange={e => setLandCourt(e.target.checked)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" /> Land Court
               </label>
             </div>
           </div>
-
-          <div>
-            <span className="block text-sm font-medium text-slate-700 mb-2">Recording</span>
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input 
-                  type="checkbox" 
-                  checked={landCourt} 
-                  onChange={e => setLandCourt(e.target.checked)}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                Land Court
-              </label>
-            </div>
+          <div className="mt-4 border-t border-slate-200 pt-4">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Other Information</label>
+            <textarea value={otherInformation} onChange={e => setOtherInformation(e.target.value)} placeholder="Any other important details..." className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white min-h-[80px]" />
           </div>
-        </div>
-
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Other Information</label>
-          <textarea
-            value={otherInformation}
-            onChange={e => setOtherInformation(e.target.value)}
-            placeholder="Any other important details..."
-            className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white min-h-[80px]"
-          />
         </div>
       </div>
 
