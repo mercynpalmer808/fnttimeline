@@ -11,7 +11,6 @@ type FinancingType = 'Cash' | 'Loan' | '1031 Exchange';
 
 interface TimelineEvent {
   id: string;
-  party?: 'Seller' | 'Buyer' | 'Both' | 'Other' | '';
   contingency?: string;
   task: string;
   days: number;
@@ -350,7 +349,7 @@ export default function TimelineCreator() {
 
     // Columns adjusted for portrait layout
     worksheet.columns = [
-      { width: 11 }, { width: 13 }, { width: 11 }, { width: 25 }, { width: 12 },
+      { width: 11 }, { width: 13 }, { width: 25 }, { width: 12 },
       { width: 6 }, { width: 10 }, { width: 10 }, { width: 15 }
     ];
 
@@ -360,7 +359,7 @@ export default function TimelineCreator() {
     worksheet.addRow([]);
 
     // Merge cells for the title to sit to the right of the logo
-    worksheet.mergeCells('D1:I3');
+    worksheet.mergeCells('D1:H3');
     const titleCell = worksheet.getCell('D1');
     titleCell.value = 'Purchase Contract Timeline';
     titleCell.font = { name: 'Arial', size: 18, bold: true, color: { argb: 'FF1E3A8A' } };
@@ -428,13 +427,13 @@ export default function TimelineCreator() {
         row.getCell(5).value = rightLabel;
         worksheet.mergeCells(`E${row.number}:F${row.number}`);
         row.getCell(7).value = rightValue;
-        worksheet.mergeCells(`G${row.number}:I${row.number}`);
+        worksheet.mergeCells(`G${row.number}:H${row.number}`);
 
         if (rightLabel === 'Acceptance Date') acceptanceCellRef = `$G$${row.number}`;
         if (rightLabel === 'Closing Date') closingCellRef = `$G$${row.number}`;
 
         formatLabelCell(5, 6);
-        formatValueCell(7, 9, rightIsDate);
+        formatValueCell(7, 8, rightIsDate);
       }
     };
 
@@ -455,7 +454,7 @@ export default function TimelineCreator() {
     otherInfoRow.getCell(1).value = 'Other\nInformation';
     worksheet.mergeCells(`A${otherInfoRow.number}:B${otherInfoRow.number}`);
     otherInfoRow.getCell(3).value = otherInformation || '';
-    worksheet.mergeCells(`C${otherInfoRow.number}:I${otherInfoRow.number}`);
+    worksheet.mergeCells(`C${otherInfoRow.number}:H${otherInfoRow.number}`);
 
     const otherLabelCell = otherInfoRow.getCell(1);
     otherLabelCell.font = { size: 9, bold: true, color: { argb: 'FF374151' } };
@@ -468,14 +467,14 @@ export default function TimelineCreator() {
     const otherValueCell = otherInfoRow.getCell(3);
     otherValueCell.font = { size: 9 };
     otherValueCell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
-    for (let c = 3; c <= 9; c++) {
+    for (let c = 3; c <= 8; c++) {
       otherInfoRow.getCell(c).border = { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
     }
     otherInfoRow.height = 40;
 
     worksheet.addRow([]);
 
-    const headerRow = worksheet.addRow(['Due Date', 'Contingency #', 'Party', 'Task', 'Date Completed', 'Days', 'Direction', 'Base', 'Notes']);
+    const headerRow = worksheet.addRow(['Due Date', 'Contingency #', 'Task', 'Date Completed', 'Days', 'Direction', 'Base', 'Notes']);
     headerRow.eachCell(cell => {
       cell.font = { size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } };
@@ -496,7 +495,6 @@ export default function TimelineCreator() {
       const row = worksheet.addRow([
         dateCellValue,
         event.contingency || '',
-        event.party || '',
         event.task,
         event.completedDate || '',
         event.direction === 'Custom Date' ? 'N/A' : event.days,
@@ -522,7 +520,7 @@ export default function TimelineCreator() {
     const disclosureRow = worksheet.addRow([
       "Disclosure: This timeline is based on the Hawai'i Association of REALTORS(R) Purchase Contract, Revision 2/25. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties."
     ]);
-    worksheet.mergeCells(`A${disclosureRow.number}:I${disclosureRow.number}`);
+    worksheet.mergeCells(`A${disclosureRow.number}:H${disclosureRow.number}`);
     disclosureRow.getCell(1).font = { italic: true, size: 9, color: { argb: 'FF6B7280' } };
     disclosureRow.getCell(1).alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
     disclosureRow.height = 80;
@@ -556,42 +554,87 @@ export default function TimelineCreator() {
     doc.setTextColor(30, 41, 59); // slate-800
     doc.text("Purchase Contract Timeline", 196, 21, { align: 'right' });
 
-    doc.setFontSize(8);
-    doc.setTextColor(71, 85, 105); // slate-600
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42); // slate-900 (darker)
     
-    const drawField = (label: string, value: string, x: number, y: number) => {
-      doc.setFont('helvetica', 'bold');
-      doc.text(label, x, y);
-      const labelWidth = doc.getTextWidth(label + ' ');
-      doc.setFont('helvetica', 'normal');
-      doc.text(value, x + labelWidth, y);
+    let currentY = 35;
+    const lineHeight = 5;
+
+    const renderRow = (fields: {label: string, value: string, x: number, nextX?: number}[]) => {
+      let maxLines = 1;
+      
+      const fieldData = fields.map(field => {
+        doc.setFont('helvetica', 'bold');
+        const labelWidth = doc.getTextWidth(field.label + ' ');
+        doc.setFont('helvetica', 'normal');
+        
+        let textValue = field.value || '';
+        let lines: string[] | string = [textValue];
+        
+        if (field.nextX) {
+          const maxWidth = field.nextX - field.x - labelWidth - 2; // 2mm padding
+          if (maxWidth > 0) {
+            lines = doc.splitTextToSize(textValue, maxWidth);
+          }
+        }
+        
+        if (Array.isArray(lines) && lines.length > maxLines) {
+          maxLines = lines.length;
+        } else if (!Array.isArray(lines) && 1 > maxLines) {
+          maxLines = 1;
+        }
+        
+        return { ...field, labelWidth, lines };
+      });
+      
+      fieldData.forEach(field => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(field.label, field.x, currentY);
+        doc.setFont('helvetica', 'normal');
+        doc.text(field.lines, field.x + field.labelWidth, currentY);
+      });
+      
+      currentY += (maxLines * lineHeight) + 2;
     };
 
-    drawField('Property Address:', propertyAddress, 14, 35);
-    drawField('Tenure:', tenure, 14, 41);
-    drawField('Title & Escrow:', titleEscrow, 14, 47);
-    drawField('Escrow #:', escrowNumber, 14, 53);
+    renderRow([
+      { label: 'Property Address:', value: propertyAddress, x: 14, nextX: 85 },
+      { label: 'Acceptance Date:', value: acceptanceDate ? format(parseISO(acceptanceDate), 'MM/dd/yy') : 'TBD', x: 85, nextX: 150 },
+      { label: 'Listing Agent:', value: listingAgent, x: 150, nextX: 205 }
+    ]);
 
-    drawField('Acceptance Date:', acceptanceDate ? format(parseISO(acceptanceDate), 'MM/dd/yy') : 'TBD', 85, 35);
-    drawField('Closing Date:', closingDate ? format(parseISO(closingDate), 'MM/dd/yy') : 'TBD', 85, 41);
-    drawField('Contract Date:', contractDate ? format(parseISO(contractDate), 'MM/dd/yy') : 'TBD', 85, 47);
-    drawField('Sales Price:', salesPrice, 85, 53);
+    renderRow([
+      { label: 'Tenure:', value: tenure, x: 14, nextX: 85 },
+      { label: 'Closing Date:', value: closingDate ? format(parseISO(closingDate), 'MM/dd/yy') : 'TBD', x: 85, nextX: 150 },
+      { label: 'Buyers Agent:', value: buyersAgent, x: 150, nextX: 205 }
+    ]);
 
-    drawField('Listing Agent:', listingAgent, 150, 35);
-    drawField('Buyers Agent:', buyersAgent, 150, 41);
-    drawField('Lender Info:', lenderInfo, 150, 47);
-    drawField('Seller/Buyer Info:', sellerBuyerInfo, 150, 53);
+    renderRow([
+      { label: 'Title & Escrow:', value: titleEscrow, x: 14, nextX: 85 },
+      { label: 'Contract Date:', value: contractDate ? format(parseISO(contractDate), 'MM/dd/yy') : 'TBD', x: 85, nextX: 150 },
+      { label: 'Lender Info:', value: lenderInfo, x: 150, nextX: 205 }
+    ]);
+
+    renderRow([
+      { label: 'Escrow #:', value: escrowNumber, x: 14, nextX: 85 },
+      { label: 'Sales Price:', value: salesPrice, x: 85, nextX: 150 },
+      { label: 'Seller/Buyer Info:', value: sellerBuyerInfo, x: 150, nextX: 205 }
+    ]);
 
     const financingStr = (Object.keys(financing) as FinancingType[]).filter(k => financing[k]).join(', ');
-    drawField('Financing:', financingStr || 'None', 14, 59);
-    drawField('Tax Withholdings:', [harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : ''].filter(Boolean).join(', ') || 'None', 85, 59);
-    drawField('Recording:', landCourt ? 'Land Court' : 'Regular', 150, 59);
+    renderRow([
+      { label: 'Financing:', value: financingStr || 'None', x: 14, nextX: 85 },
+      { label: 'Tax Withholdings:', value: [harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : ''].filter(Boolean).join(', ') || 'None', x: 85, nextX: 150 },
+      { label: 'Recording:', value: landCourt ? 'Land Court' : 'Regular', x: 150, nextX: 205 }
+    ]);
 
-    let startY = 68;
     if (otherInformation) {
-      drawField('Other Info:', otherInformation, 14, 65);
-      startY = 74;
+      renderRow([
+        { label: 'Other Info:', value: otherInformation, x: 14, nextX: 205 }
+      ]);
     }
+
+    let startY = currentY + 3;
     const tableData = getSortedEvents().map(event => {
       const calcDate = calculateDate(event);
       let dateStr = 'Needs base date';
@@ -606,7 +649,6 @@ export default function TimelineCreator() {
       return [
         event.completedDate || '',
         event.contingency || '',
-        event.party || '',
         event.task,
         event.direction === 'Custom Date' ? 'N/A' : event.days.toString(),
         event.direction,
@@ -618,14 +660,14 @@ export default function TimelineCreator() {
 
     autoTable(doc, {
       startY,
-      head: [['Date Completed', 'Cont.', 'Party', 'Task', 'Days', 'Dir.', 'Base Date', 'Due Date', 'Notes']],
+      head: [['Date Completed', 'Cont.', 'Task', 'Days', 'Dir.', 'Base Date', 'Due Date', 'Notes']],
       body: tableData,
       theme: 'striped',
-      headStyles: { fillColor: [15, 23, 42] }, // slate-900
-      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 10 }, // slate-900, larger header, white text
+      styles: { fontSize: 9, cellPadding: 1.5, textColor: [15, 23, 42] }, // larger, darker body text (slate-900)
       columnStyles: {
-        3: { cellWidth: 45 }, // Task
-        8: { cellWidth: 30 }  // Notes
+        2: { cellWidth: 50 }, // Task
+        7: { cellWidth: 35 }  // Notes
       },
       alternateRowStyles: { fillColor: [248, 250, 252] } // slate-50
     });
@@ -945,7 +987,6 @@ export default function TimelineCreator() {
                   </span>
                 </div>
               </th>
-              <th className="p-3 font-semibold w-24">Party</th>
               <th className="p-3 font-semibold min-w-[300px] w-96">Task</th>
               <th className="p-3 font-semibold w-20">Days</th>
               <th className="p-3 font-semibold w-28">Direction</th>
@@ -1034,18 +1075,6 @@ export default function TimelineCreator() {
                         placeholder="e.g. J-1"
                       />
                     )}
-                  </td>                  <td className="p-2">
-                    <select
-                      value={event.party || ''}
-                      onChange={e => updateEvent(event.id, { party: e.target.value as any })}
-                      className="w-full border-slate-200 rounded p-1 text-xs shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-transparent"
-                    >
-                      <option value="">None</option>
-                      <option value="Seller">Seller</option>
-                      <option value="Buyer">Buyer</option>
-                      <option value="Both">Both</option>
-                      <option value="Other">Other</option>
-                    </select>
                   </td>
                   <td className="p-2">
                     <input
