@@ -132,7 +132,7 @@ const replacement = `<div className="bg-slate-50 p-4 rounded-lg mb-6 border bord
               </label>
             </div>
           </div>
-          <div className="mt-4 border-t pt-4">
+          <div className="mt-4 border-t border-slate-200 pt-4">
             <label className="block text-sm font-medium text-slate-700 mb-1">Other Information</label>
             <textarea value={otherInformation} onChange={e => setOtherInformation(e.target.value)} placeholder="Any other important details..." className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white min-h-[80px]" />
           </div>
