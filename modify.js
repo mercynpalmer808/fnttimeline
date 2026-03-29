@@ -1,96 +1,124 @@
 const fs = require('fs');
-let code = fs.readFileSync('src/components/TimelineCreator.tsx', 'utf-8');
+let content = fs.readFileSync('src/components/TimelineCreator.tsx', 'utf8');
 
-// The block to replace
-const startMarker = "const addInfoRow = (label: string, value: any, isDate: boolean = false) => {";
-const endMarker = "worksheet.addRow([]);\n\n    const headerRow = worksheet.addRow(['Due Date', 'Contingency #', 'Party', 'Task', 'Date Completed', 'Days', 'Direction', 'Base', 'Notes']);";
+content = content.replace(/  party\?: 'Seller' \| 'Buyer' \| 'Both' \| 'Other' \| '';\n/, '');
 
-const startIndex = code.indexOf(startMarker);
-const endIndex = code.indexOf(endMarker);
+content = content.replace(
+  /worksheet\.columns = \[\n      \{ width: 11 \}, \{ width: 13 \}, \{ width: 11 \}, \{ width: 25 \}, \{ width: 12 \},\n      \{ width: 6 \}, \{ width: 10 \}, \{ width: 10 \}, \{ width: 15 \}\n    \];/,
+  `worksheet.columns = [\n      { width: 11 }, { width: 13 }, { width: 25 }, { width: 12 },\n      { width: 6 }, { width: 10 }, { width: 10 }, { width: 15 }\n    ];`
+);
 
-if (startIndex === -1 || endIndex === -1) {
-  console.log("Could not find markers.", startIndex, endIndex);
-  process.exit(1);
-}
+content = content.replace(/worksheet\.mergeCells\('D1:I3'\);/, "worksheet.mergeCells('D1:H3');");
 
-const replacement = `let acceptanceCellRef = '$C$10';
-    let closingCellRef = '$C$10';
+content = content.replace(/worksheet\.mergeCells\(\`G\$\{row\.number\}:I\$\{row\.number\}\`\);/, 'worksheet.mergeCells(`G${row.number}:H${row.number}`);');
 
-    const addInfoRowTwoCols = (
-      leftLabel: string, leftValue: any, leftIsDate: boolean,
-      rightLabel: string | null, rightValue: any, rightIsDate: boolean
-    ) => {
-      const row = worksheet.addRow([]);
-      
-      row.getCell(1).value = leftLabel;
-      worksheet.mergeCells(\`A\${row.number}:B\${row.number}\`);
-      row.getCell(3).value = leftValue;
-      worksheet.mergeCells(\`C\${row.number}:D\${row.number}\`);
+content = content.replace(/formatValueCell\(7, 9, rightIsDate\);/, 'formatValueCell(7, 8, rightIsDate);');
 
-      if (leftLabel === 'Acceptance Date') acceptanceCellRef = \`$C$\${row.number}\`;
-      if (leftLabel === 'Closing Date') closingCellRef = \`$C$\${row.number}\`;
-      
-      const formatLabelCell = (col1: number, col2: number) => {
-        const cell = row.getCell(col1);
-        cell.font = { size: 9, bold: true, color: { argb: 'FF374151' } };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
-        cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
-        for (let c = col1; c <= col2; c++) {
-          row.getCell(c).border = { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
-        }
-      };
+content = content.replace(/worksheet\.mergeCells\(\`C\$\{otherInfoRow\.number\}:I\$\{otherInfoRow\.number\}\`\);/, 'worksheet.mergeCells(`C${otherInfoRow.number}:H${otherInfoRow.number}`);');
 
-      const formatValueCell = (col1: number, col2: number, isDate: boolean) => {
-        const cell = row.getCell(col1);
-        cell.font = { size: 9 };
-        cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
-        if (isDate && cell.value !== 'TBD') cell.numFmt = 'mm/dd/yy';
-        for (let c = col1; c <= col2; c++) {
-          row.getCell(c).border = { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
-        }
-      };
+content = content.replace(/for \(let c = 3; c <= 9; c\+\+\) \{/, 'for (let c = 3; c <= 8; c++) {');
 
-      formatLabelCell(1, 2);
-      formatValueCell(3, 4, leftIsDate);
+content = content.replace(/const headerRow = worksheet\.addRow\(\['Due Date', 'Contingency #', 'Party', 'Task', 'Date Completed', 'Days', 'Direction', 'Base', 'Notes'\]\);/, "const headerRow = worksheet.addRow(['Due Date', 'Contingency #', 'Task', 'Date Completed', 'Days', 'Direction', 'Base', 'Notes']);");
 
-      if (rightLabel !== null) {
-        row.getCell(5).value = rightLabel;
-        worksheet.mergeCells(\`E\${row.number}:F\${row.number}\`);
-        row.getCell(7).value = rightValue;
-        worksheet.mergeCells(\`G\${row.number}:I\${row.number}\`);
+content = content.replace(
+`      const row = worksheet.addRow([
+        dateCellValue,
+        event.contingency || '',
+        event.party || '',
+        event.task,
+        event.completedDate || '',
+        event.direction === 'Custom Date' ? 'N/A' : event.days,
+        event.direction,
+        event.direction === 'Custom Date' ? 'N/A' : event.base,
+        event.notes || ''
+      ]);`,
+`      const row = worksheet.addRow([
+        dateCellValue,
+        event.contingency || '',
+        event.task,
+        event.completedDate || '',
+        event.direction === 'Custom Date' ? 'N/A' : event.days,
+        event.direction,
+        event.direction === 'Custom Date' ? 'N/A' : event.base,
+        event.notes || ''
+      ]);`
+);
 
-        if (rightLabel === 'Acceptance Date') acceptanceCellRef = \`$G$\${row.number}\`;
-        if (rightLabel === 'Closing Date') closingCellRef = \`$G$\${row.number}\`;
+content = content.replace(/worksheet\.mergeCells\(\`A\$\{disclosureRow\.number\}:I\$\{disclosureRow\.number\}\`\);/, 'worksheet.mergeCells(`A${disclosureRow.number}:H${disclosureRow.number}`);');
 
-        formatLabelCell(5, 6);
-        formatValueCell(7, 9, rightIsDate);
-      }
-    };
+content = content.replace(
+`      return [
+        event.completedDate || '',
+        event.contingency || '',
+        event.party || '',
+        event.task,
+        event.direction === 'Custom Date' ? 'N/A' : event.days.toString(),
+        event.direction,
+        event.direction === 'Custom Date' ? 'N/A' : event.base,
+        dateStr,
+        event.notes || ''
+      ];`,
+`      return [
+        event.completedDate || '',
+        event.contingency || '',
+        event.task,
+        event.direction === 'Custom Date' ? 'N/A' : event.days.toString(),
+        event.direction,
+        event.direction === 'Custom Date' ? 'N/A' : event.base,
+        dateStr,
+        event.notes || ''
+      ];`
+);
 
-    const excelAcceptanceDate = acceptanceDate ? new Date(parseISO(acceptanceDate).getTime() + parseISO(acceptanceDate).getTimezoneOffset() * 60000) : 'TBD';
-    const excelClosingDate = closingDate ? new Date(parseISO(closingDate).getTime() + parseISO(closingDate).getTimezoneOffset() * 60000) : 'TBD';
-    const excelContractDate = contractDate ? new Date(parseISO(contractDate).getTime() + parseISO(contractDate).getTimezoneOffset() * 60000) : 'TBD';
+content = content.replace(
+`    autoTable(doc, {
+      startY,
+      head: [['Date Completed', 'Cont.', 'Party', 'Task', 'Days', 'Dir.', 'Base Date', 'Due Date', 'Notes']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: [15, 23, 42] }, // slate-900
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: {
+        3: { cellWidth: 45 }, // Task
+        8: { cellWidth: 30 }  // Notes
+      },`,
+`    autoTable(doc, {
+      startY,
+      head: [['Date Completed', 'Cont.', 'Task', 'Days', 'Dir.', 'Base Date', 'Due Date', 'Notes']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: [15, 23, 42] }, // slate-900
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: {
+        2: { cellWidth: 45 }, // Task
+        7: { cellWidth: 30 }  // Notes
+      },`
+);
 
-    addInfoRowTwoCols('Property Address', propertyAddress, false, 'Sales Price', salesPrice, false);
-    addInfoRowTwoCols('Tenure', tenure, false, 'Listing Agent', listingAgent, false);
-    addInfoRowTwoCols('Title Co / Escrow', titleEscrow, false, 'Buyer Agent', buyersAgent, false);
-    addInfoRowTwoCols('Escrow #', escrowNumber, false, 'Lender Info', lenderInfo, false);
-    addInfoRowTwoCols('Acceptance Date', excelAcceptanceDate, true, 'Seller/Buyer Info', sellerBuyerInfo, false);
-    addInfoRowTwoCols('Closing Date', excelClosingDate, true, 'Financing', Object.entries(financing).filter(e => e[1]).map(e => e[0]).join(', '), false);
-    addInfoRowTwoCols('Contract Date', excelContractDate, true, 'Other Info', otherInformation, false);
-    addInfoRowTwoCols('HARPTA', harpta ? 'Yes' : 'No', false, 'FIRPTA', firpta ? 'Yes' : 'No', false);
-    addInfoRowTwoCols('Land Court', landCourt ? 'Yes' : 'No', false, null, '', false);
+content = content.replace(/<th className="p-3 font-semibold w-24">Party<\/th>\n\s*/, '');
 
-    `;
+content = content.replace(
+`                  </td>                  <td className="p-2">
+                    <select
+                      value={event.party || ''}
+                      onChange={e => updateEvent(event.id, { party: e.target.value as any })}
+                      className="w-full border-slate-200 rounded p-1 text-xs shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-transparent"
+                    >
+                      <option value="">None</option>
+                      <option value="Seller">Seller</option>
+                      <option value="Buyer">Buyer</option>
+                      <option value="Both">Both</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </td>
+                  <td className="p-2">
+                    <input
+                      type="text"`,
+`                  </td>
+                  <td className="p-2">
+                    <input
+                      type="text"`
+);
 
-code = code.substring(0, startIndex) + replacement + code.substring(endIndex);
-
-// Also need to replace the formula to use the dynamic cell refs.
-// Wait, the formula has fixed variables: `const formulaStr = ...`
-const formulaOriginal = "\`IF(H${rowNum}=\"Acceptance\",IF($B$10=\"TBD\",\"TBD\",IF(G${rowNum}=\"After\",$B$10+F${rowNum},$B$10-F${rowNum})),IF(H${rowNum}=\"Closing\",IF($B$11=\"TBD\",\"TBD\",IF(G${rowNum}=\"After\",$B$11+F${rowNum},$B$11-F${rowNum})),\"TBD\"))\`";
-const formulaNew = "\`IF(H\${rowNum}=\"Acceptance\",IF(\${acceptanceCellRef}=\"TBD\",\"TBD\",IF(G\${rowNum}=\"After\",\${acceptanceCellRef}+F\${rowNum},\${acceptanceCellRef}-F\${rowNum})),IF(H\${rowNum}=\"Closing\",IF(\${closingCellRef}=\"TBD\",\"TBD\",IF(G\${rowNum}=\"After\",\${closingCellRef}+F\${rowNum},\${closingCellRef}-F\${rowNum})),\"TBD\"))\`";
-
-code = code.replace(formulaOriginal, formulaNew);
-
-fs.writeFileSync('src/components/TimelineCreator.tsx', code);
-console.log("Done");
+fs.writeFileSync('src/components/TimelineCreator.tsx', content);
+console.log('done');
