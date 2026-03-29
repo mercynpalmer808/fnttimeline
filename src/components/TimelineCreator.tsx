@@ -564,9 +564,26 @@ export default function TimelineCreator() {
     let currentY = 35;
     const lineHeight = 5;
 
-    const renderRow = (fields: {label: string, value: string, x: number, nextX?: number}[]) => {
+    const financingStr = (Object.keys(financing) as FinancingType[]).filter(k => financing[k]).join(', ');
+    const taxRecordingStr = [harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : '', landCourt ? 'Land Court' : ''].filter(Boolean).join(', ') || 'None';
+
+    const contractDetailsFields = [
+      [{ label: 'Property Address:', value: propertyAddress, x: 14, nextX: 105 }, { label: 'Sales Price:', value: salesPrice, x: 105, nextX: 196 }],
+      [{ label: 'Title Co & Escrow Officer:', value: titleEscrow, x: 14, nextX: 105 }, { label: 'Escrow #:', value: escrowNumber, x: 105, nextX: 196 }],
+      [{ label: 'Listing Agent:', value: listingAgent, x: 14, nextX: 105 }, { label: 'Seller Info:', value: sellerInfo, x: 105, nextX: 196 }],
+      [{ label: 'Buyers Agent:', value: buyersAgent, x: 14, nextX: 105 }, { label: 'Buyer Info:', value: buyerInfo, x: 105, nextX: 196 }],
+      [{ label: 'Financing:', value: financingStr || 'None', x: 14, nextX: 105 }, { label: 'Lender Info:', value: lenderInfo, x: 105, nextX: 196 }],
+      [{ label: 'Tenure:', value: tenure, x: 14, nextX: 105 }, { label: 'Tax & Recording:', value: taxRecordingStr, x: 105, nextX: 196 }],
+      [{ label: 'Acceptance Date:', value: acceptanceDate ? format(parseISO(acceptanceDate), 'MM/dd/yy') : 'TBD', x: 14, nextX: 75 }, { label: 'Closing Date:', value: closingDate ? format(parseISO(closingDate), 'MM/dd/yy') : 'TBD', x: 75, nextX: 135 }, { label: 'Contract Date:', value: contractDate ? format(parseISO(contractDate), 'MM/dd/yy') : 'TBD', x: 135, nextX: 196 }]
+    ];
+
+    if (otherInformation) {
+      contractDetailsFields.push([{ label: 'Other Info:', value: otherInformation, x: 14, nextX: 196 }]);
+    }
+
+    let totalHeight = 0;
+    const rowFieldDataList = contractDetailsFields.map(fields => {
       let maxLines = 1;
-      
       const fieldData = fields.map(field => {
         doc.setFont('helvetica', 'bold');
         const labelWidth = doc.getTextWidth(field.label + ' ');
@@ -590,60 +607,26 @@ export default function TimelineCreator() {
         
         return { ...field, labelWidth, lines };
       });
-      
+      const rHeight = (maxLines * lineHeight) + 2;
+      totalHeight += rHeight;
+      return { fieldData, rHeight };
+    });
+
+    // Draw background for Contract Details (slate-50 with slate-200 border)
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    // Centered width of 190 (from x=10 to x=200) to balance on 210mm page width
+    doc.roundedRect(10, currentY - 5, 190, totalHeight + 4, 2, 2, 'FD');
+
+    rowFieldDataList.forEach(({ fieldData, rHeight }) => {
       fieldData.forEach(field => {
         doc.setFont('helvetica', 'bold');
         doc.text(field.label, field.x, currentY);
         doc.setFont('helvetica', 'normal');
         doc.text(field.lines, field.x + field.labelWidth, currentY);
       });
-      
-      currentY += (maxLines * lineHeight) + 2;
-    };
-
-    renderRow([
-      { label: 'Property Address:', value: propertyAddress, x: 14, nextX: 110 },
-      { label: 'Sales Price:', value: salesPrice, x: 110, nextX: 205 }
-    ]);
-
-    renderRow([
-      { label: 'Title Co & Escrow Officer:', value: titleEscrow, x: 14, nextX: 110 },
-      { label: 'Escrow #:', value: escrowNumber, x: 110, nextX: 205 }
-    ]);
-
-    renderRow([
-      { label: 'Listing Agent:', value: listingAgent, x: 14, nextX: 110 },
-      { label: 'Seller Info:', value: sellerInfo, x: 110, nextX: 205 }
-    ]);
-
-    renderRow([
-      { label: 'Buyers Agent:', value: buyersAgent, x: 14, nextX: 110 },
-      { label: 'Buyer Info:', value: buyerInfo, x: 110, nextX: 205 }
-    ]);
-
-    const financingStr = (Object.keys(financing) as FinancingType[]).filter(k => financing[k]).join(', ');
-    renderRow([
-      { label: 'Financing:', value: financingStr || 'None', x: 14, nextX: 110 },
-      { label: 'Lender Info:', value: lenderInfo, x: 110, nextX: 205 }
-    ]);
-
-    const taxRecordingStr = [harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : '', landCourt ? 'Land Court' : ''].filter(Boolean).join(', ') || 'None';
-    renderRow([
-      { label: 'Tenure:', value: tenure, x: 14, nextX: 110 },
-      { label: 'Tax & Recording:', value: taxRecordingStr, x: 110, nextX: 205 }
-    ]);
-
-    renderRow([
-      { label: 'Acceptance Date:', value: acceptanceDate ? format(parseISO(acceptanceDate), 'MM/dd/yy') : 'TBD', x: 14, nextX: 85 },
-      { label: 'Closing Date:', value: closingDate ? format(parseISO(closingDate), 'MM/dd/yy') : 'TBD', x: 85, nextX: 150 },
-      { label: 'Contract Date:', value: contractDate ? format(parseISO(contractDate), 'MM/dd/yy') : 'TBD', x: 150, nextX: 205 }
-    ]);
-
-    if (otherInformation) {
-      renderRow([
-        { label: 'Other Info:', value: otherInformation, x: 14, nextX: 205 }
-      ]);
-    }
+      currentY += rHeight;
+    });
 
     let startY = currentY + 3;
     const tableData = getSortedEvents().map(event => {
