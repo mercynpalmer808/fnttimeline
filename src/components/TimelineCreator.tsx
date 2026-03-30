@@ -33,12 +33,13 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: 'e5c', contingency: 'E-5(c)', task: 'Inclusion of PV Documents to rescind and terminate Purchase Contract', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'f3', contingency: 'F-3(a)', task: 'Change to the Closing Date Unilateral Right to Extend', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'f7a', contingency: 'F-7(a)', task: 'Conveyance Tax Declaration', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'g2b', contingency: 'G-2(b)', task: "Buyer's Review of Prelim Report", days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'g1', contingency: 'G-1', task: 'Prelim Report Delivered to Buyer', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'g2b', contingency: 'G-2(b)', task: 'Prelim Report Review & Approval', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'g2c', contingency: 'G-2(c)', task: 'Title Defect(s)', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'g3', contingency: 'G-3', task: 'Vesting & Tenancy', days: 14, direction: 'Before', base: 'Closing' },
   { id: 'h1a', contingency: 'H-1(a)', task: 'No Contingency on Obtaining Cash Funds (Evidence Attached)', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'h1b1', contingency: 'H-1(b) i', task: 'No Contingency of Cash Funds', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'h1b2', contingency: 'H-1(b) ii', task: 'No Contingency of Cash Funds', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'h1b1', contingency: 'H-1(b) i', task: 'Verification of Cash Funds', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'h1b2', contingency: 'H-1(b) ii', task: 'Seller Elects to Cancel', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h2', contingency: 'H-2', task: 'Cont. of Cash Funds (Type)', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h2a', contingency: 'H-2(a)', task: 'Contingency of Obtaining Cash Funds', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h3', contingency: 'H-3', task: 'Financing Contingency Applies', days: 30, direction: 'After', base: 'Acceptance' },
@@ -450,7 +451,8 @@ export default function TimelineCreator() {
     addInfoRowTwoCols('Listing Agent', listingAgent, false, 'Seller Info', sellerInfo, false);
     addInfoRowTwoCols('Buyers Agent', buyersAgent, false, 'Buyer Info', buyerInfo, false);
     addInfoRowTwoCols('Financing', Object.entries(financing).filter(e => e[1]).map(e => e[0]).join(', ') || 'None', false, 'Lender Info', lenderInfo, false);
-    addInfoRowTwoCols('Tenure', tenure, false, 'Tax & Recording', [harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : '', landCourt ? 'Land Court' : ''].filter(Boolean).join(', ') || 'None', false);
+    addInfoRowTwoCols('Tenure', tenure, false, 'Tax Withholding', [harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : ''].filter(Boolean).join(', ') || 'None', false);
+    addInfoRowTwoCols('Recording', landCourt ? 'Land Court' : 'None', false, null, null, false);
     addInfoRowTwoCols('Acceptance Date', excelAcceptanceDate, true, 'Closing Date', excelClosingDate, true);
     addInfoRowTwoCols('Contract Date', excelContractDate, true, null, null, false);
 
@@ -565,7 +567,8 @@ export default function TimelineCreator() {
     const lineHeight = 5;
 
     const financingStr = (Object.keys(financing) as FinancingType[]).filter(k => financing[k]).join(', ');
-    const taxRecordingStr = [harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : '', landCourt ? 'Land Court' : ''].filter(Boolean).join(', ') || 'None';
+    const taxWithholdingStr = [harpta ? 'HARPTA' : '', firpta ? 'FIRPTA' : ''].filter(Boolean).join(', ') || 'None';
+    const recordingStr = landCourt ? 'Land Court' : 'None';
 
     const contractDetailsFields = [
       [{ label: 'Property Address:', value: propertyAddress, x: 14, nextX: 105 }, { label: 'Sales Price:', value: salesPrice, x: 105, nextX: 196 }],
@@ -573,7 +576,7 @@ export default function TimelineCreator() {
       [{ label: 'Listing Agent:', value: listingAgent, x: 14, nextX: 105 }, { label: 'Seller Info:', value: sellerInfo, x: 105, nextX: 196 }],
       [{ label: 'Buyers Agent:', value: buyersAgent, x: 14, nextX: 105 }, { label: 'Buyer Info:', value: buyerInfo, x: 105, nextX: 196 }],
       [{ label: 'Financing:', value: financingStr || 'None', x: 14, nextX: 105 }, { label: 'Lender Info:', value: lenderInfo, x: 105, nextX: 196 }],
-      [{ label: 'Tenure:', value: tenure, x: 14, nextX: 105 }, { label: 'Tax & Recording:', value: taxRecordingStr, x: 105, nextX: 196 }],
+      [{ label: 'Tenure:', value: tenure, x: 14, nextX: 75 }, { label: 'Tax Withholding:', value: taxWithholdingStr, x: 75, nextX: 135 }, { label: 'Recording:', value: recordingStr, x: 135, nextX: 196 }],
       [{ label: 'Acceptance Date:', value: acceptanceDate ? format(parseISO(acceptanceDate), 'MM/dd/yy') : 'TBD', x: 14, nextX: 75 }, { label: 'Closing Date:', value: closingDate ? format(parseISO(closingDate), 'MM/dd/yy') : 'TBD', x: 75, nextX: 135 }, { label: 'Contract Date:', value: contractDate ? format(parseISO(contractDate), 'MM/dd/yy') : 'TBD', x: 135, nextX: 196 }]
     ];
 
