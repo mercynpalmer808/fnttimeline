@@ -406,7 +406,7 @@ export default function TimelineCreator() {
       
       const formatLabelCell = (col1: number, col2: number) => {
         const cell = row.getCell(col1);
-        cell.font = { size: 9, bold: true, color: { argb: 'FF374151' } };
+        cell.font = { size: 10, bold: true, color: { argb: 'FF111827' } };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
         cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
         for (let c = col1; c <= col2; c++) {
@@ -416,7 +416,7 @@ export default function TimelineCreator() {
 
       const formatValueCell = (col1: number, col2: number, isDate: boolean) => {
         const cell = row.getCell(col1);
-        cell.font = { size: 9 };
+        cell.font = { size: 10 };
         cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
         if (isDate && cell.value !== 'TBD') cell.numFmt = 'mm/dd/yy';
         for (let c = col1; c <= col2; c++) {
@@ -461,7 +461,7 @@ export default function TimelineCreator() {
     worksheet.mergeCells(`C${otherInfoRow.number}:H${otherInfoRow.number}`);
 
     const otherLabelCell = otherInfoRow.getCell(1);
-    otherLabelCell.font = { size: 9, bold: true, color: { argb: 'FF374151' } };
+    otherLabelCell.font = { size: 10, bold: true, color: { argb: 'FF111827' } };
     otherLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
     otherLabelCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
     for (let c = 1; c <= 2; c++) {
@@ -469,7 +469,7 @@ export default function TimelineCreator() {
     }
 
     const otherValueCell = otherInfoRow.getCell(3);
-    otherValueCell.font = { size: 9 };
+    otherValueCell.font = { size: 10 };
     otherValueCell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
     for (let c = 3; c <= 8; c++) {
       otherInfoRow.getCell(c).border = { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
@@ -480,7 +480,7 @@ export default function TimelineCreator() {
 
     const headerRow = worksheet.addRow(['Due Date', 'Contingency #', 'Task', 'Date Completed', 'Days', 'Direction', 'Base', 'Notes']);
     headerRow.eachCell(cell => {
-      cell.font = { size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.font = { size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } };
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
       cell.border = { top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, right: { style: 'thin', color: { argb: 'FFD1D5DB' } } };
@@ -509,7 +509,7 @@ export default function TimelineCreator() {
 
       const isEven = index % 2 === 0;
       row.eachCell((cell, colNumber) => {
-        cell.font = { size: 9 };
+        cell.font = { size: 10 };
         cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         cell.border = { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isEven ? 'FFFFFFFF' : 'FFF9FAFB' } };
@@ -525,7 +525,7 @@ export default function TimelineCreator() {
       "Disclosure: This timeline is based on the Hawai'i Association of REALTORS(R) Purchase Contract, Revision 2/25. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties."
     ]);
     worksheet.mergeCells(`A${disclosureRow.number}:H${disclosureRow.number}`);
-    disclosureRow.getCell(1).font = { italic: true, size: 9, color: { argb: 'FF6B7280' } };
+    disclosureRow.getCell(1).font = { italic: true, size: 10, color: { argb: 'FF374151' } };
     disclosureRow.getCell(1).alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
     disclosureRow.height = 80;
 
