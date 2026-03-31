@@ -1,31 +1,29 @@
 const ExcelJS = require('exceljs');
-const fs = require('fs');
 
-async function test() {
+async function run() {
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Timeline');
+  const calcSheet = workbook.addWorksheet('Date Calculator');
   
-  worksheet.getCell('C10').value = new Date('2025-05-01T00:00:00Z');
-  
-  const rowNum = 15;
-  const daysCell = `E${rowNum}`;
-  const dirCell = `G${rowNum}`;
-  const baseCell = '$C$10';
-
-  const row = worksheet.addRow([]);
-  row.getCell(5).value = 10;
-  row.getCell(7).value = 'After';
-  
-  let formula = `WORKDAY(${baseCell}, IF(${dirCell}="After", ${daysCell}, -${daysCell}))`;
-  
-  row.getCell(1).value = {
-    formula: `IF(ISNUMBER(${baseCell}), ${formula}, "TBD")`,
-    result: new Date('2025-05-15T00:00:00Z')
+  calcSheet.getCell('A3').value = 'Starting Date';
+  calcSheet.getCell('B3').value = new Date();
+  calcSheet.getCell('A4').value = 'Number of Days';
+  calcSheet.getCell('B4').value = 10;
+  calcSheet.getCell('A5').value = 'Direction';
+  const dir = calcSheet.getCell('B5');
+  dir.value = 'After';
+  dir.dataValidation = {
+    type: 'list',
+    allowBlank: false,
+    formulae: ['"Before,After"']
   };
-  
-  row.getCell(1).numFmt = 'mm/dd/yy';
-  
+
+  const calResult = calcSheet.getCell('B7');
+  calResult.value = { formula: 'IF(B5="Before", B3-B4, B3+B4)' };
+
+  const busResult = calcSheet.getCell('B8');
+  busResult.value = { formula: 'IF(B5="Before", WORKDAY(B3, -B4), WORKDAY(B3, B4))' };
+
   await workbook.xlsx.writeFile('test_output.xlsx');
-  console.log('done');
+  console.log("Done");
 }
-test();
+run();
