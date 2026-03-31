@@ -64,7 +64,7 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: 'l2c', contingency: 'L-2(c)', task: 'Termite Report Cost/Seller or Buyer to Pay', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'm1d_1', contingency: 'M-1(d)', task: 'Condo/HOA Docs to Buyer', days: 10, direction: 'After', base: 'Acceptance' },
   { id: 'm1d_2', contingency: 'M-1(d)', task: 'Buyer Receipt of Condo/HOA Docs', days: 10, direction: 'After', base: 'Acceptance' },
-  { id: 'm1e', contingency: 'M-1(e)', task: 'Buyer Review Docs', days: 10, direction: 'After', base: 'Acceptance' },
+  { id: 'm1e', contingency: 'M-1(e)', task: 'Documentation Approval by Buyer', days: 10, direction: 'After', base: 'Acceptance' },
   { id: 'm1f', contingency: 'M-1(f)', task: 'Return Condo/HOA Docs if terminating', days: 10, direction: 'After', base: 'Acceptance' },
   { id: 'm2', contingency: 'M-2', task: 'Delivery of Documents Format', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'm3', contingency: 'M-3', task: 'Delivery of Addtl Documents', days: 14, direction: 'After', base: 'Acceptance' },
