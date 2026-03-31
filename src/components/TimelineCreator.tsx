@@ -4,7 +4,31 @@ import pkg from 'file-saver';
 const { saveAs } = pkg;
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { addDays, subDays, format, parseISO, isValid } from 'date-fns';
+import { addDays, subDays, format, parseISO, isValid, isWeekend } from 'date-fns';
+
+const addBusinessDays = (date: Date, days: number): Date => {
+  let result = new Date(date);
+  let remainingDays = days;
+  while (remainingDays > 0) {
+    result = addDays(result, 1);
+    if (!isWeekend(result)) {
+      remainingDays--;
+    }
+  }
+  return result;
+};
+
+const subBusinessDays = (date: Date, days: number): Date => {
+  let result = new Date(date);
+  let remainingDays = days;
+  while (remainingDays > 0) {
+    result = subDays(result, 1);
+    if (!isWeekend(result)) {
+      remainingDays--;
+    }
+  }
+  return result;
+};
 import { Plus, Trash2, Download, FileText, ChevronUp, ChevronDown } from 'lucide-react';
 
 type FinancingType = 'Cash' | 'Loan' | '1031 Exchange';
@@ -14,6 +38,7 @@ interface TimelineEvent {
   contingency?: string;
   task: string;
   days: number;
+  isBusinessDays?: boolean;
   direction: 'After' | 'Before' | 'Custom Date';
   base: 'Acceptance' | 'Closing' | 'Custom';
   customDate?: string;
@@ -26,12 +51,12 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: '1a', contingency: 'B-1', task: 'Initial Deposit', days: 3, direction: 'After', base: 'Acceptance' },
   { id: '1b', contingency: 'C-2', task: 'Additional Deposit', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'c3', contingency: 'C-3', task: 'Concessions', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'c4', contingency: 'C-4', task: "Seller's Compensation to Buyer's Brokerage Firm", days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e3', contingency: 'E-3', task: 'Inventory of Furnishings', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e3c', contingency: 'E-3(c)', task: 'Inventory List review period ends', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e5a', contingency: 'E-5(a)', task: 'Inclusion of PV', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e5b', contingency: 'E-5(b)', task: 'Inclusion of PV Docs, etc.', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e5c', contingency: 'E-5(c)', task: 'Inclusion of PV Documents to rescind and terminate Purchase Contract', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'f2', contingency: 'F-2', task: 'Scheduled Closing Date', days: 45, direction: 'After', base: 'Acceptance' },
   { id: 'f3', contingency: 'F-3(a)', task: 'Change to the Closing Date Unilateral Right to Extend', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'f7a', contingency: 'F-7(a)', task: "Buyer's Principal Residence", days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'g1', contingency: 'G-1', task: 'Prelim Report Delivered to Buyer', days: 14, direction: 'After', base: 'Acceptance' },
@@ -43,7 +68,6 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: 'h1b2', contingency: 'H-1(b) ii', task: 'Seller Elects to Cancel', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h2', contingency: 'H-2', task: 'Cont. of Cash Funds (Type)', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h2a', contingency: 'H-2(a)', task: 'Contingency of Obtaining Cash Funds', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'h3', contingency: 'H-3', task: 'Financing Contingency Applies', days: 30, direction: 'After', base: 'Acceptance' },
   { id: 'h4a', contingency: 'H-4(a)', task: "Buyer's Obligation (a) Prequal letter", days: 7, direction: 'After', base: 'Acceptance' },
   { id: 'h4b', contingency: 'H-4(b)', task: "Buyer's Obligation (b) Conditional Loan Approval", days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h4c', contingency: 'H-4(c)', task: "Buyer's (c) Satisfaction of Loan Conditions", days: 21, direction: 'After', base: 'Acceptance' },
@@ -67,7 +91,6 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: 'm1d_2', contingency: 'M-1(d)', task: 'Buyer Receipt of Condo/HOA Docs', days: 10, direction: 'After', base: 'Acceptance' },
   { id: 'm1e', contingency: 'M-1(e)', task: 'Documentation Approval by Buyer', days: 10, direction: 'After', base: 'Acceptance' },
   { id: 'm1f', contingency: 'M-1(f)', task: 'Return Condo/HOA Docs if terminating', days: 10, direction: 'After', base: 'Acceptance' },
-  { id: 'm2', contingency: 'M-2', task: 'Delivery of Documents Format', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'm3', contingency: 'M-3', task: 'Delivery of Addtl Documents', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'n2a', contingency: 'N-2(a)', task: 'Rental Documents Delivery', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'n2b', contingency: 'N-2(b)', task: 'Rental Document Review', days: 14, direction: 'After', base: 'Acceptance' },
@@ -157,9 +180,15 @@ export default function TimelineCreator() {
 
     if (event.days === 0) return baseDate;
 
-    return event.direction === 'After' 
-      ? addDays(baseDate, event.days) 
-      : subDays(baseDate, event.days);
+    if (event.isBusinessDays) {
+      return event.direction === 'After'
+        ? addBusinessDays(baseDate, event.days)
+        : subBusinessDays(baseDate, event.days);
+    } else {
+      return event.direction === 'After' 
+        ? addDays(baseDate, event.days) 
+        : subDays(baseDate, event.days);
+    }
   };
 
   const getSortedEvents = () => {
@@ -356,7 +385,7 @@ export default function TimelineCreator() {
     // Columns adjusted for portrait layout
     worksheet.columns = [
       { width: 11 }, { width: 13 }, { width: 25 }, { width: 12 },
-      { width: 6 }, { width: 10 }, { width: 10 }, { width: 15 }
+      { width: 6 }, { width: 9 }, { width: 10 }, { width: 10 }, { width: 15 }
     ];
 
     // Add empty rows for header spacing
@@ -481,7 +510,7 @@ export default function TimelineCreator() {
 
     worksheet.addRow([]);
 
-    const headerRow = worksheet.addRow(['Due Date', 'Contingency #', 'Task', 'Date Completed', 'Days', 'Direction', 'Base', 'Notes']);
+    const headerRow = worksheet.addRow(['Due Date', 'Contingency #', 'Task', 'Date Completed', 'Days', 'Bus. Days', 'Direction', 'Base', 'Notes']);
     headerRow.eachCell(cell => {
       cell.font = { size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } };
@@ -495,7 +524,8 @@ export default function TimelineCreator() {
       
       let dateCellValue: any = calcDate ? new Date(calcDate.getTime() + calcDate.getTimezoneOffset() * 60000) : 'TBD';
       if (event.direction !== 'Custom Date') {
-        const formulaStr = `IF(H${rowNum}="Acceptance",IF(${acceptanceCellRef}="TBD","TBD",IF(G${rowNum}="After",${acceptanceCellRef}+F${rowNum},${acceptanceCellRef}-F${rowNum})),IF(H${rowNum}="Closing",IF(${closingCellRef}="TBD","TBD",IF(G${rowNum}="After",${closingCellRef}+F${rowNum},${closingCellRef}-F${rowNum})),"TBD"))`;
+        const getMath = (base: string) => `IF(E${rowNum}=0,${base},IF(G${rowNum}="After",IF(F${rowNum}="Yes",WORKDAY(${base},E${rowNum}),${base}+E${rowNum}),IF(F${rowNum}="Yes",WORKDAY(${base},-E${rowNum}),${base}-E${rowNum})))`;
+        const formulaStr = `IF(H${rowNum}="Acceptance",IF(${acceptanceCellRef}="TBD","TBD",${getMath(acceptanceCellRef)}),IF(H${rowNum}="Closing",IF(${closingCellRef}="TBD","TBD",${getMath(closingCellRef)}),"TBD"))`;
         dateCellValue = { formula: formulaStr, result: calcDate ? new Date(calcDate.getTime() + calcDate.getTimezoneOffset() * 60000) : 'TBD' };
       }
 
@@ -505,6 +535,7 @@ export default function TimelineCreator() {
         event.task,
         event.completedDate || '',
         event.direction === 'Custom Date' ? 'N/A' : event.days,
+        event.direction === 'Custom Date' ? 'N/A' : (event.isBusinessDays ? 'Yes' : 'No'),
         event.direction,
         event.direction === 'Custom Date' ? 'N/A' : event.base,
         event.notes || ''
@@ -649,8 +680,7 @@ export default function TimelineCreator() {
         event.contingency || '',
         event.task,
         event.direction === 'Custom Date' ? 'N/A' : event.days.toString(),
-        event.direction,
-        event.direction === 'Custom Date' ? 'N/A' : event.base,
+        event.direction === 'Custom Date' ? 'N/A' : (event.isBusinessDays ? 'Yes' : 'No'),
         dateStr,
         event.notes || ''
       ];
@@ -658,14 +688,14 @@ export default function TimelineCreator() {
 
     autoTable(doc, {
       startY,
-      head: [['Date Completed', 'Cont.', 'Task', 'Days', 'Dir.', 'Base Date', 'Due Date', 'Notes']],
+      head: [['Date Completed', 'Cont.', 'Task', 'Days', 'Bus.', 'Due Date', 'Notes']],
       body: tableData,
       theme: 'striped',
-      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 10 }, // slate-900, larger header, white text
-      styles: { fontSize: 9, cellPadding: 1.5, textColor: [15, 23, 42] }, // larger, darker body text (slate-900)
+      headStyles: { halign: 'center', fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 10 }, // slate-900, larger header, white text
+      styles: { halign: 'center', fontSize: 9, cellPadding: 1.5, textColor: [15, 23, 42] }, // larger, darker body text (slate-900)
       columnStyles: {
         2: { cellWidth: 50 }, // Task
-        7: { cellWidth: 35 }  // Notes
+        6: { cellWidth: 35 }  // Notes
       },
       alternateRowStyles: { fillColor: [248, 250, 252] } // slate-50
     });
@@ -732,39 +762,6 @@ export default function TimelineCreator() {
             >
               <Download size={18} /> Export Excel
             </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-slate-50 p-4 rounded-lg mb-6 border border-slate-200">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4">Contract Dates</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Acceptance Date</label>
-            <input
-              type="date"
-              value={acceptanceDate}
-              onChange={e => setAcceptanceDate(e.target.value)}
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Closing Date</label>
-            <input
-              type="date"
-              value={closingDate}
-              onChange={e => setClosingDate(e.target.value)}
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Contract Date</label>
-            <input
-              type="date"
-              value={contractDate}
-              onChange={e => setContractDate(e.target.value)}
-              className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
-            />
           </div>
         </div>
       </div>
@@ -857,6 +854,38 @@ export default function TimelineCreator() {
             </div>
           </div>
           <div className="mt-4 border-t border-slate-200 pt-4">
+            <h3 className="text-md font-semibold text-slate-800 mb-4">Contract Dates</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Acceptance Date</label>
+                <input
+                  type="date"
+                  value={acceptanceDate}
+                  onChange={e => setAcceptanceDate(e.target.value)}
+                  className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Closing Date</label>
+                <input
+                  type="date"
+                  value={closingDate}
+                  onChange={e => setClosingDate(e.target.value)}
+                  className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Contract Date</label>
+                <input
+                  type="date"
+                  value={contractDate}
+                  onChange={e => setContractDate(e.target.value)}
+                  className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 border-t border-slate-200 pt-4">
             <label className="block text-sm font-medium text-slate-700 mb-1">Other Information</label>
             <textarea value={otherInformation} onChange={e => setOtherInformation(e.target.value)} placeholder="Any other important details..." className="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500 bg-white min-h-[80px]" />
           </div>
@@ -911,6 +940,7 @@ export default function TimelineCreator() {
               </th>
               <th className="p-3 font-semibold min-w-[300px] w-96">Task</th>
               <th className="p-3 font-semibold w-20">Days</th>
+              <th className="p-3 font-semibold w-24 text-center">Bus. Days</th>
               <th className="p-3 font-semibold w-28">Direction</th>
               <th className="p-3 font-semibold w-32">Base Date</th>
               <th 
@@ -1028,6 +1058,16 @@ export default function TimelineCreator() {
                         value={event.days}
                         onChange={e => updateEvent(event.id, { days: parseInt(e.target.value) || 0 })}
                         className="w-full border-slate-200 rounded p-1 text-center shadow-sm focus:ring-blue-500 focus:border-blue-500 min-w-[3rem]"
+                      />
+                    )}
+                  </td>
+                  <td className="p-2 text-center">
+                    {event.direction !== 'Custom Date' && (
+                      <input 
+                        type="checkbox" 
+                        checked={event.isBusinessDays || false}
+                        onChange={e => updateEvent(event.id, { isBusinessDays: e.target.checked })}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
                       />
                     )}
                   </td>
