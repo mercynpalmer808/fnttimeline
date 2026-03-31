@@ -45,17 +45,18 @@ interface TimelineEvent {
   manualDate?: string;
   completedDate?: string;
   notes?: string;
+  na?: boolean;
 }
 
 const INITIAL_EVENTS: TimelineEvent[] = [
   { id: '1a', contingency: 'B-1', task: 'Initial Deposit', days: 3, direction: 'After', base: 'Acceptance' },
   { id: '1b', contingency: 'C-2', task: 'Additional Deposit', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'c3', contingency: 'C-3', task: 'Concessions', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'e3', contingency: 'E-3', task: 'Inventory of Furnishings', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'e3c', contingency: 'E-3(c)', task: 'Inventory List review period ends', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'e3', contingency: 'E-3(a)', task: 'Inventory of Furnishings Attached', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'e3c', contingency: 'E-3(c)', task: 'Approval of Furnishings', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e5a', contingency: 'E-5(a)', task: 'Inclusion of PV', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e5b', contingency: 'E-5(b)', task: 'Inclusion of PV Docs, etc.', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'e5c', contingency: 'E-5(c)', task: 'Inclusion of PV Documents to rescind and terminate Purchase Contract', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'e5c', contingency: 'E-5(c)', task: 'Buyer approve PV Docs', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'f2', contingency: 'F-2', task: 'Scheduled Closing Date', days: 45, direction: 'After', base: 'Acceptance' },
   { id: 'f3', contingency: 'F-3(a)', task: 'Change to the Closing Date Unilateral Right to Extend', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'f7a', contingency: 'F-7(a)', task: "Buyer's Principal Residence", days: 14, direction: 'After', base: 'Acceptance' },
@@ -63,12 +64,11 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: 'g2b', contingency: 'G-2(b)', task: 'Prelim Report Review & Approval', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'g2c', contingency: 'G-2(c)', task: 'Title Defect(s)', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'g3', contingency: 'G-3', task: 'Vesting & Tenancy', days: 14, direction: 'Before', base: 'Closing' },
-  { id: 'h1a', contingency: 'H-1(a)', task: 'No Contingency on Obtaining Cash Funds (Evidence Attached)', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'h1b1', contingency: 'H-1(b) i', task: 'Verification of Cash Funds', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'h1', contingency: 'H-1(a)', task: 'Evidence of Cash funds Attached', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h1b2', contingency: 'H-1(b) ii', task: 'Seller Elects to Cancel', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h2', contingency: 'H-2', task: 'Cont. of Cash Funds (Type)', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h2a', contingency: 'H-2(a)', task: 'Contingency of Obtaining Cash Funds', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'h4a', contingency: 'H-4(a)', task: "Buyer's Obligation (a) Prequal letter", days: 7, direction: 'After', base: 'Acceptance' },
+  { id: 'h4a', contingency: 'H-4(a)', task: 'Prequal letter Attached', days: 7, direction: 'After', base: 'Acceptance' },
   { id: 'h4b', contingency: 'H-4(b)', task: "Buyer's Obligation (b) Conditional Loan Approval", days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'h4c', contingency: 'H-4(c)', task: "Buyer's (c) Satisfaction of Loan Conditions", days: 21, direction: 'After', base: 'Acceptance' },
   { id: 'i1b', contingency: 'I-1(b)', task: 'Sellers Disclosure to Buyer (b)', days: 7, direction: 'After', base: 'Acceptance' },
@@ -518,15 +518,29 @@ export default function TimelineCreator() {
       cell.border = { top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } }, left: { style: 'thin', color: { argb: 'FFD1D5DB' } }, right: { style: 'thin', color: { argb: 'FFD1D5DB' } } };
     });
 
-    getSortedEvents().forEach((event, index) => {
+    getSortedEvents().filter(e => !e.na).forEach((event, index) => {
       const calcDate = calculateDate(event);
       const rowNum = headerRow.number + 1 + index;
       
       let dateCellValue: any = calcDate ? new Date(calcDate.getTime() + calcDate.getTimezoneOffset() * 60000) : 'TBD';
-      if (event.direction !== 'Custom Date') {
-        const getMath = (base: string) => `IF(E${rowNum}=0,${base},IF(G${rowNum}="After",IF(F${rowNum}="Yes",WORKDAY(${base},E${rowNum}),${base}+E${rowNum}),IF(F${rowNum}="Yes",WORKDAY(${base},-E${rowNum}),${base}-E${rowNum})))`;
-        const formulaStr = `IF(H${rowNum}="Acceptance",IF(${acceptanceCellRef}="TBD","TBD",${getMath(acceptanceCellRef)}),IF(H${rowNum}="Closing",IF(${closingCellRef}="TBD","TBD",${getMath(closingCellRef)}),"TBD"))`;
-        dateCellValue = { formula: formulaStr, result: calcDate ? new Date(calcDate.getTime() + calcDate.getTimezoneOffset() * 60000) : 'TBD' };
+
+      if (event.direction !== 'Custom Date' && event.days !== undefined) {
+        let baseCell = '';
+        if (event.base === 'Acceptance' && acceptanceCellRef) baseCell = acceptanceCellRef;
+        else if (event.base === 'Closing' && closingCellRef) baseCell = closingCellRef;
+
+        if (baseCell) {
+          const daysCell = `E${rowNum}`;
+          const busDaysCell = `F${rowNum}`;
+          const dirCell = `G${rowNum}`;
+          
+          const formula = `IF(${busDaysCell}="Yes", WORKDAY(${baseCell}, IF(${dirCell}="After", ${daysCell}, -${daysCell})), IF(${dirCell}="After", ${baseCell} + ${daysCell}, ${baseCell} - ${daysCell}))`;
+          
+          dateCellValue = {
+            formula: `IF(ISNUMBER(${baseCell}), ${formula}, "TBD")`,
+            result: calcDate ? new Date(calcDate.getTime() + calcDate.getTimezoneOffset() * 60000) : undefined
+          };
+        }
       }
 
       const row = worksheet.addRow([
@@ -664,9 +678,9 @@ export default function TimelineCreator() {
     });
 
     let startY = currentY + 3;
-    const tableData = getSortedEvents().map(event => {
+    const tableData = getSortedEvents().filter(e => !e.na).map(event => {
       const calcDate = calculateDate(event);
-      let dateStr = 'Needs base date';
+      let dateStr = '';
       if (event.direction === 'Custom Date') {
         dateStr = event.manualDate && isValid(parseISO(event.manualDate)) 
           ? format(parseISO(event.manualDate), 'MM/dd/yy') 
@@ -927,6 +941,7 @@ export default function TimelineCreator() {
           <thead>
             <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 text-sm">
               <th className="p-3 font-semibold w-24 text-center">Date Completed</th>
+              <th className="p-3 font-semibold w-16 text-center">N/A</th>
               <th 
                 className="p-3 font-semibold w-24 cursor-pointer hover:bg-slate-200 transition-colors group" 
                 onClick={() => setSortBy(prev => prev === 'contingency' ? 'default' : 'contingency')}
@@ -964,12 +979,20 @@ export default function TimelineCreator() {
               return (
                 <tr key={event.id} className={`border-b border-slate-100 hover:bg-slate-50 group ${event.completedDate ? 'opacity-60 bg-slate-50/50' : ''}`}>
                   <td className="p-2 text-center">
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={event.completedDate || ''}
                       onChange={e => updateEvent(event.id, { completedDate: e.target.value })}
                       className="w-20 bg-transparent border-slate-300 rounded text-center text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                       placeholder="MM/DD/YY"
+                    />
+                  </td>
+                  <td className="p-2 text-center">
+                    <input
+                      type="checkbox"
+                      checked={event.na || false}
+                      onChange={e => updateEvent(event.id, { na: e.target.checked })}
+                      className="rounded border-slate-300 text-red-600 focus:ring-red-500 w-4 h-4"
                     />
                   </td>
                   <td className="p-2">
@@ -1033,6 +1056,36 @@ export default function TimelineCreator() {
                         <option value="F-7(a)">F-7(a)</option>
                         <option value="F-7(b)">F-7(b)</option>
                       </select>
+                    ) : event.id === 'e3' ? (
+                      <select
+                        value={event.contingency}
+                        onChange={e => {
+                          const isE3A = e.target.value === 'E-3(a)';
+                          updateEvent(event.id, {
+                            contingency: isE3A ? 'E-3(a)' : 'E-3(b)',
+                            task: isE3A ? 'Inventory of Furnishings Attached' : 'Inventory of Furnishings to be provided by'
+                          });
+                        }}
+                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completedDate ? 'line-through text-slate-500' : ''}`}
+                      >
+                        <option value="E-3(a)">E-3(a)</option>
+                        <option value="E-3(b)">E-3(b)</option>
+                      </select>
+                    ) : event.id === 'h1' ? (
+                      <select
+                        value={event.contingency}
+                        onChange={e => {
+                          const isH1A = e.target.value === 'H-1(a)';
+                          updateEvent(event.id, {
+                            contingency: isH1A ? 'H-1(a)' : 'H-1(b)',
+                            task: isH1A ? 'Evidence of Cash funds Attached' : 'Evidence of Cash Funds to be provided by'
+                          });
+                        }}
+                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completedDate ? 'line-through text-slate-500' : ''}`}
+                      >
+                        <option value="H-1(a)">H-1(a)</option>
+                        <option value="H-1(b)">H-1(b)</option>
+                      </select>
                     ) : (
                       <input
                         type="text"
@@ -1044,13 +1097,28 @@ export default function TimelineCreator() {
                     )}
                   </td>
                   <td className="p-2">
-                    <input
-                      type="text"
-                      value={event.task}
-                      onChange={e => updateEvent(event.id, { task: e.target.value })}
-                      className={`w-full bg-transparent border-0 border-b border-transparent focus:border-blue-500 focus:ring-0 px-2 py-1 text-xs ${event.completedDate ? 'line-through text-slate-500' : ''}`}
-                      placeholder="Task description"
-                    />
+                    {event.id === 'h4a' ? (
+                      <select
+                        value={event.task}
+                        onChange={e => {
+                          updateEvent(event.id, {
+                            task: e.target.value
+                          });
+                        }}
+                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-xs shadow-sm focus:border-blue-500 focus:ring-0 ${event.completedDate ? 'line-through text-slate-500' : ''}`}
+                      >
+                        <option value="Prequal letter Attached">Prequal letter Attached</option>
+                        <option value="Prequal letter to be provided by">Prequal letter to be provided by</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={event.task}
+                        onChange={e => updateEvent(event.id, { task: e.target.value })}
+                        className={`w-full bg-transparent border-0 border-b border-transparent focus:border-blue-500 focus:ring-0 px-2 py-1 text-xs ${event.completedDate ? 'line-through text-slate-500' : ''}`}
+                        placeholder="Task description"
+                      />
+                    )}
                   </td>                  <td className="p-2">
                     {event.direction !== 'Custom Date' && (
                       <input 
