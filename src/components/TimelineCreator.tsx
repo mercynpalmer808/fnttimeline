@@ -577,6 +577,75 @@ export default function TimelineCreator() {
     disclosureRow.getCell(1).alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
     disclosureRow.height = 80;
 
+    // --- SECOND TAB: DATE CALCULATOR ---
+    const calcSheet = workbook.addWorksheet('Date Calculator');
+    calcSheet.columns = [
+      { width: 30 },
+      { width: 25 }
+    ];
+
+    calcSheet.mergeCells('A1:B1');
+    const calcHeader = calcSheet.getCell('A1');
+    calcHeader.value = 'Date Calculator';
+    calcHeader.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } };
+    calcHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } };
+    calcHeader.alignment = { horizontal: 'center', vertical: 'middle' };
+    calcSheet.getRow(1).height = 30;
+
+    const labels = [
+      { row: 3, text: 'Starting Date' },
+      { row: 4, text: 'Number of Days' },
+      { row: 5, text: 'Direction (Before/After)' },
+      { row: 7, text: 'Due Date (Calendar Days)' },
+      { row: 8, text: 'Due Date (Business Days)' }
+    ];
+
+    labels.forEach(({ row, text }) => {
+      const cell = calcSheet.getCell(`A${row}`);
+      cell.value = text;
+      cell.font = { bold: true };
+      cell.alignment = { vertical: 'middle' };
+    });
+
+    const startDateCell = calcSheet.getCell('B3');
+    startDateCell.value = new Date();
+    startDateCell.numFmt = 'mm/dd/yyyy';
+
+    const daysCell = calcSheet.getCell('B4');
+    daysCell.value = 10;
+
+    const directionCell = calcSheet.getCell('B5');
+    directionCell.value = 'After';
+    directionCell.dataValidation = {
+      type: 'list',
+      allowBlank: false,
+      formulae: ['"Before,After"']
+    };
+
+    ['B3', 'B4', 'B5'].forEach(ref => {
+      const cell = calcSheet.getCell(ref);
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+      };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+
+    const calResult = calcSheet.getCell('B7');
+    calResult.value = { formula: 'IF(B5="Before", B3-B4, B3+B4)' };
+    calResult.numFmt = 'mm/dd/yyyy';
+    calResult.font = { bold: true, color: { argb: 'FF059669' } };
+    calResult.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    const busResult = calcSheet.getCell('B8');
+    busResult.value = { formula: 'IF(B5="Before", WORKDAY(B3, -B4), WORKDAY(B3, B4))' };
+    busResult.numFmt = 'mm/dd/yyyy';
+    busResult.font = { bold: true, color: { argb: 'FF059669' } };
+    busResult.alignment = { horizontal: 'center', vertical: 'middle' };
+
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     saveAs(blob, "Purchase_Contract_Timeline.xlsx");
