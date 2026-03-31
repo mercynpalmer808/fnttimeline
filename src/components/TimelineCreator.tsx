@@ -27,12 +27,13 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: '1b', contingency: 'C-2', task: 'Additional Deposit', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'c3', contingency: 'C-3', task: 'Concessions', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'c4', contingency: 'C-4', task: "Seller's Compensation to Buyer's Brokerage Firm", days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'e3', contingency: 'E-3', task: 'Inclusions of Furnishings', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'e3', contingency: 'E-3', task: 'Inventory of Furnishings', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'e3c', contingency: 'E-3(c)', task: 'Inventory List review period ends', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e5a', contingency: 'E-5(a)', task: 'Inclusion of PV', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e5b', contingency: 'E-5(b)', task: 'Inclusion of PV Docs, etc.', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e5c', contingency: 'E-5(c)', task: 'Inclusion of PV Documents to rescind and terminate Purchase Contract', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'f3', contingency: 'F-3(a)', task: 'Change to the Closing Date Unilateral Right to Extend', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'f7a', contingency: 'F-7(a)', task: 'Conveyance Tax Declaration', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'f7a', contingency: 'F-7(a)', task: "Buyer's Principal Residence", days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'g1', contingency: 'G-1', task: 'Prelim Report Delivered to Buyer', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'g2b', contingency: 'G-2(b)', task: 'Prelim Report Review & Approval', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'g2c', contingency: 'G-2(c)', task: 'Title Defect(s)', days: 14, direction: 'After', base: 'Acceptance' },
@@ -986,6 +987,21 @@ export default function TimelineCreator() {
                       >
                         <option value="F-3(a)">F-3(a)</option>
                         <option value="F-3(b)">F-3(b)</option>
+                      </select>
+                    ) : event.id === 'f7a' ? (
+                      <select
+                        value={event.contingency}
+                        onChange={e => {
+                          const isF7A = e.target.value === 'F-7(a)';
+                          updateEvent(event.id, { 
+                            contingency: isF7A ? 'F-7(a)' : 'F-7(b)', 
+                            task: isF7A ? "Buyer's Principal Residence" : "NOT Buyer's Principal Residence" 
+                          });
+                        }}
+                        className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completedDate ? 'line-through text-slate-500' : ''}`}
+                      >
+                        <option value="F-7(a)">F-7(a)</option>
+                        <option value="F-7(b)">F-7(b)</option>
                       </select>
                     ) : (
                       <input
