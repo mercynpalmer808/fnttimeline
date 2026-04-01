@@ -1,5 +1,7 @@
-import { jsPDF } from 'jspdf';
+const { jsPDF } = require('jspdf');
 const doc = new jsPDF();
-doc.setFontSize(8);
-doc.setFont("helvetica", "bold");
-console.log("Width:", doc.getTextWidth("Property Address: "));
+if (typeof doc.setEncryption === 'function') {
+  console.log('jsPDF has setEncryption');
+} else {
+  console.log('jsPDF does NOT have setEncryption');
+}
