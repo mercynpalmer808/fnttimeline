@@ -29,7 +29,7 @@ const subBusinessDays = (date: Date, days: number): Date => {
   }
   return result;
 };
-import { Plus, Trash2, Download, FileText, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Download, FileText, ChevronUp, ChevronDown, HelpCircle, X } from 'lucide-react';
 
 type FinancingType = 'Cash' | 'Loan' | '1031 Exchange';
 
@@ -102,6 +102,7 @@ const INITIAL_EVENTS: TimelineEvent[] = [
 ];
 
 export default function TimelineCreator() {
+  const [showInstructions, setShowInstructions] = useState(false);
   const [acceptanceDate, setAcceptanceDate] = useState<string>('');
   const [closingDate, setClosingDate] = useState<string>('');
   const [contractDate, setContractDate] = useState<string>('');
@@ -388,6 +389,11 @@ export default function TimelineCreator() {
       { width: 6 }, { width: 9 }, { width: 10 }, { width: 10 }, { width: 15 }
     ];
 
+    // Unlock columns to allow user to edit data when sheet is protected
+    for (let i = 1; i <= 20; i++) {
+      worksheet.getColumn(i).protection = { locked: false };
+    }
+
     // Add empty rows for header spacing
     worksheet.addRow([]);
     worksheet.addRow([]);
@@ -646,13 +652,37 @@ export default function TimelineCreator() {
     busResult.font = { bold: true, color: { argb: 'FF059669' } };
     busResult.alignment = { horizontal: 'center', vertical: 'middle' };
 
+    // Protect the sheet to lock objects (the logo) but allow other interactions
+    await worksheet.protect(Math.random().toString(36).slice(-10), {
+      selectLockedCells: true,
+      selectUnlockedCells: true,
+      formatCells: true,
+      formatColumns: true,
+      formatRows: true,
+      insertColumns: true,
+      insertRows: true,
+      insertHyperlinks: true,
+      deleteColumns: true,
+      deleteRows: true,
+      sort: true,
+      autoFilter: true,
+      pivotTables: true,
+      objects: false // protects objects from being edited/deleted
+    });
+
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     saveAs(blob, "Purchase_Contract_Timeline.xlsx");
   };
 
   const handlePdfExport = async () => {
-    const doc = new jsPDF('portrait');
+    // Initialize jsPDF with encryption to restrict editing (locking the logo and content)
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      encryption: {
+        userPermissions: ['print', 'copy']
+      }
+    });
     
     // Add Fidelity Logo
     const imgUrl = '/fidelity-logo.png';
@@ -811,41 +841,43 @@ export default function TimelineCreator() {
           <img src="/logo.png" alt="Logo" className="h-12 object-contain" />
           <h1 className="text-3xl font-bold text-slate-900">Purchase Contract Timeline</h1>
         </div>
-        <div className="flex flex-col gap-2 md:items-end">
-          <div className="flex flex-wrap gap-2">
-            <button 
-              onClick={handleNewTimeline}
-              className="flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              New Timeline
-            </button>
-            <button 
-              onClick={handleSaveTemplate}
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              Save Timeline
-            </button>
-            <button 
-              onClick={handleLoadTemplate}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              Load Timeline
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button 
-              onClick={handlePdfExport}
-              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              <FileText size={18} /> Convert to PDF
-            </button>
-            <button 
-              onClick={handleExport}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              <Download size={18} /> Export Excel
-            </button>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 w-full md:w-auto ml-auto shrink-0">
+          <button 
+            onClick={handleNewTimeline}
+            className="flex justify-center items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium transition-colors w-full whitespace-nowrap"
+          >
+            New Timeline
+          </button>
+          <button 
+            onClick={handleSaveTemplate}
+            className="flex justify-center items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors w-full whitespace-nowrap"
+          >
+            Save Timeline
+          </button>
+          <button 
+            onClick={handleLoadTemplate}
+            className="flex justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors w-full whitespace-nowrap"
+          >
+            Load Timeline
+          </button>
+          <button 
+            onClick={() => setShowInstructions(true)}
+            className="flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors w-full whitespace-nowrap"
+          >
+            <HelpCircle size={18} /> INSTRUCTIONS
+          </button>
+          <button 
+            onClick={handlePdfExport}
+            className="flex justify-center items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors w-full whitespace-nowrap"
+          >
+            <FileText size={18} /> Convert to PDF
+          </button>
+          <button 
+            onClick={handleExport}
+            className="flex justify-center items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors w-full whitespace-nowrap"
+          >
+            <Download size={18} /> Export Excel
+          </button>
         </div>
       </div>
 
@@ -1307,6 +1339,74 @@ export default function TimelineCreator() {
         <strong>Disclosure:</strong><br />
         This timeline is based on the Hawaiʻi Association of REALTORS® Purchase Contract, Revision 2/25. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties.
       </div>
+
+      {/* Instructions Modal */}
+      {showInstructions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <HelpCircle className="text-blue-600" />
+                How to Use the Timeline Creator
+              </h2>
+              <button 
+                onClick={() => setShowInstructions(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-6 text-slate-700 text-left">
+              <section>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">1. Entering Contract Details</h3>
+                <p className="mb-2">Fill in the property and transaction details in the top section. This information will appear in the header of your exported documents.</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li><strong>Contract Dates:</strong> Be sure to fill in the <em>Acceptance Date</em>, <em>Closing Date</em>, and <em>Contract Date</em>. The Acceptance and Closing dates are essential as they serve as the base dates to calculate the timeline deadlines.</li>
+                  <li><strong>Financing & Other Options:</strong> Select your financing type, tenure, tax withholdings (HARPTA/FIRPTA), and whether it is a Land Court property.</li>
+                </ul>
+              </section>
+              
+              <section>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">2. Managing Timeline Events</h3>
+                <p className="mb-2">The table below the details contains all timeline contingencies based on the standard purchase contract.</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li><strong>Date Completed:</strong> Enter a date once a contingency has been fulfilled to strike it out and mark it as done.</li>
+                  <li><strong>N/A:</strong> Check this box if a contingency doesn't apply to your transaction.</li>
+                  <li><strong>Modifying Rows:</strong> You can edit the <em>Task</em> description, the number of <em>Days</em>, and the <em>Direction</em> (After/Before). Some contingencies offer dropdown choices.</li>
+                  <li><strong>Sorting:</strong> Click the "Sort by Contingency #" or "Sort by Due Date" buttons to reorder your timeline automatically.</li>
+                  <li><strong>Adding / Deleting:</strong> Use the "Add Event" button to add custom contingencies, or click the trash can icon to remove an event. You can also reorder manually using the up/down arrows.</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">3. Saving and Loading</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li><strong>Save Timeline:</strong> Save your current progress as a template to your browser's local storage.</li>
+                  <li><strong>Load Timeline:</strong> Reload a previously saved template.</li>
+                  <li><strong>New Timeline:</strong> Reset the form back to the default contract contingencies.</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">4. Exporting via PDF or Excel</h3>
+                <p className="mb-2">Once your timeline is complete, you can download it to share with clients or keep for your records:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li><strong>Convert to PDF:</strong> Click the red <span className="inline-flex items-center gap-1 font-semibold text-red-600 px-1"><FileText size={16} /> Convert to PDF</span> button. This generates a clean, formatted PDF document containing the contract details and the timeline table, ready for printing.</li>
+                  <li><strong>Export Excel:</strong> Click the green <span className="inline-flex items-center gap-1 font-semibold text-green-600 px-1"><Download size={16} /> Export Excel</span> button. This downloads an `.xlsx` spreadsheet with styled cells, which you can further edit in Microsoft Excel or Google Sheets.</li>
+                </ul>
+              </section>
+            </div>
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
+              <button 
+                onClick={() => setShowInstructions(false)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
