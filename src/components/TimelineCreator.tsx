@@ -583,6 +583,22 @@ export default function TimelineCreator() {
     disclosureRow.getCell(1).alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
     disclosureRow.height = 80;
 
+    // Unlock all cells by default so the rest of the sheet remains editable
+    worksheet.columns.forEach(col => {
+      if (col) {
+        col.protection = { locked: false };
+      }
+    });
+
+    // Lock the disclosure cell
+    disclosureRow.getCell(1).protection = { locked: true };
+
+    // Protect worksheet to enforce the lock
+    worksheet.protect(Math.random().toString(36).slice(-8), {
+      selectLockedCells: true,
+      selectUnlockedCells: true,
+    });
+
     // --- SECOND TAB: DATE CALCULATOR ---
     const calcSheet = workbook.addWorksheet('Date Calculator');
     calcSheet.columns = [
@@ -815,22 +831,58 @@ export default function TimelineCreator() {
 
     const finalY = (doc as any).lastAutoTable?.finalY || 280;
     
-    // Add disclosure text
-    doc.setFontSize(6);
-    doc.setTextColor(100, 116, 139); // slate-500
+    // Add disclosure text as an image to prevent editing
     const disclosureText = "Disclosure: This timeline is based on the Hawai'i Association of REALTORS(R) Purchase Contract, Revision 2/25. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties.";
-    
+
+    doc.setFontSize(6);
     // Split text to fit width (14 to 196 = 182 width)
     const splitText = doc.splitTextToSize(disclosureText, 182);
-    
-    // If the text would run off the page, add a new page
-    if (finalY + 10 + (splitText.length * 3) > doc.internal.pageSize.getHeight()) {
-      doc.addPage();
-      doc.text(splitText, 14, 20);
-    } else {
-      doc.text(splitText, 14, finalY + 10);
-    }
 
+    // Create a canvas to draw the text
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      const scale = 4; // High resolution scale
+      const lineHeight = 8;
+      canvas.width = 182 * scale;
+      canvas.height = (splitText.length * lineHeight + 4) * scale;
+
+      ctx.scale(scale, scale);
+
+      // Draw white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 182, canvas.height / scale);
+
+      // Draw text
+      ctx.font = 'normal 6px Helvetica, Arial, sans-serif';
+      ctx.fillStyle = '#64748b'; // slate-500
+      ctx.textBaseline = 'top';
+
+      splitText.forEach((line: string, index: number) => {
+        ctx.fillText(line, 0, index * lineHeight + 2);
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const imgHeight = canvas.height / scale;
+
+      // If the image would run off the page, add a new page
+      if (finalY + 10 + imgHeight > doc.internal.pageSize.getHeight()) {
+        doc.addPage();
+        doc.addImage(imgData, 'PNG', 14, 20, 182, imgHeight);
+      } else {
+        doc.addImage(imgData, 'PNG', 14, finalY + 10, 182, imgHeight);
+      }
+    } else {
+      // Fallback
+      doc.setTextColor(100, 116, 139); // slate-500
+      if (finalY + 10 + (splitText.length * 3) > doc.internal.pageSize.getHeight()) {
+        doc.addPage();
+        doc.text(splitText, 14, 20);
+      } else {
+        doc.text(splitText, 14, finalY + 10);
+      }
+    }
     doc.save('Purchase_Contract_Timeline.pdf');
   };
 
