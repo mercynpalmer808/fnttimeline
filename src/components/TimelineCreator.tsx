@@ -369,6 +369,7 @@ export default function TimelineCreator() {
 
   const handleExport = async () => {
     const workbook = new ExcelJS.Workbook();
+    workbook.calcProperties.fullCalcOnLoad = true;
     const worksheet = workbook.addWorksheet('Timeline');
 
     // Format to print on 8.5 x 11 paper (Letter), Portrait, fit to 1 page wide
@@ -455,7 +456,7 @@ export default function TimelineCreator() {
         const cell = row.getCell(col1);
         cell.font = { size: 10 };
         cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
-        if (isDate && cell.value !== 'TBD') cell.numFmt = 'mm/dd/yy';
+        if (isDate) cell.numFmt = 'mm/dd/yy';
         for (let c = col1; c <= col2; c++) {
           row.getCell(c).border = { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
         }
@@ -528,25 +529,23 @@ export default function TimelineCreator() {
       const calcDate = calculateDate(event);
       const rowNum = headerRow.number + 1 + index;
       
-      let dateCellValue: any = calcDate ? new Date(calcDate.getTime() + calcDate.getTimezoneOffset() * 60000) : 'TBD';
+            let dateCellValue: any = calcDate ? new Date(calcDate.getTime() + calcDate.getTimezoneOffset() * 60000) : 'TBD';
 
-      if (event.direction !== 'Custom Date' && event.days !== undefined) {
-        let baseCell = '';
-        if (event.base === 'Acceptance' && acceptanceCellRef) baseCell = acceptanceCellRef;
-        else if (event.base === 'Closing' && closingCellRef) baseCell = closingCellRef;
-
-        if (baseCell) {
-          const daysCell = `E${rowNum}`;
-          const busDaysCell = `F${rowNum}`;
-          const dirCell = `G${rowNum}`;
-          
-          const formula = `IF(${busDaysCell}="Yes", WORKDAY(${baseCell}, IF(${dirCell}="After", ${daysCell}, -${daysCell})), IF(${dirCell}="After", ${baseCell} + ${daysCell}, ${baseCell} - ${daysCell}))`;
-          
-          dateCellValue = {
-            formula: `IF(ISNUMBER(${baseCell}), ${formula}, "TBD")`,
-            result: calcDate ? new Date(calcDate.getTime() + calcDate.getTimezoneOffset() * 60000) : undefined
-          };
-        }
+      if (acceptanceCellRef && closingCellRef && event.direction !== 'Custom Date' && event.base !== 'Custom') {
+        const daysCell = `E${rowNum}`;
+        const busDaysCell = `F${rowNum}`;
+        const dirCell = `G${rowNum}`;
+        const baseColCell = `H${rowNum}`;
+        
+        // This makes the formula follow the value in the "Base" column!
+        const baseDateDynamic = `IF(${baseColCell}="Acceptance", ${acceptanceCellRef}, IF(${baseColCell}="Closing", ${closingCellRef}, 0))`;
+        
+        const formula = `IF(${busDaysCell}="Yes", WORKDAY(${baseDateDynamic}, IF(${dirCell}="After", ${daysCell}, -${daysCell})), IF(${dirCell}="After", ${baseDateDynamic} + ${daysCell}, ${baseDateDynamic} - ${daysCell}))`;
+        
+        dateCellValue = {
+          formula: `IF(OR(${baseColCell}="Custom", ${dirCell}="Custom Date"), "N/A", IF(ISNUMBER(${baseDateDynamic}), ${formula}, "TBD"))`,
+          result: calcDate ? new Date(calcDate.getTime() + calcDate.getTimezoneOffset() * 60000) : undefined
+        };
       }
 
       const row = worksheet.addRow([
@@ -567,7 +566,7 @@ export default function TimelineCreator() {
         cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         cell.border = { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isEven ? 'FFFFFFFF' : 'FFF9FAFB' } };
-        if (colNumber === 1 && calcDate) {
+        if (colNumber === 1) {
           cell.numFmt = 'mm/dd/yy';
         }
       });
