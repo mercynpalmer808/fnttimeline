@@ -75,7 +75,7 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: 'i1b', contingency: 'I-1(b)', task: 'Sellers Disclosure to Buyer (b)', days: 7, direction: 'After', base: 'Acceptance' },
   { id: 'i2', contingency: 'I-2', task: 'Amended Disclosure Statement', days: 10, direction: 'After', base: 'Acceptance' },
   { id: 'i3a', contingency: 'I-3(a)', task: 'Buyer Acknowledgment of Disclosure', days: 10, direction: 'After', base: 'Acceptance' },
-  { id: 'i3b', contingency: 'I-3(b)', task: 'Buyer Review/Rescission Period', days: 10, direction: 'After', base: 'Acceptance' },
+  { id: 'i3b', contingency: 'I-3(b)', task: 'Buyer Review/Rescission Period', days: 15, direction: 'After', base: 'Acceptance' },
   { id: '4', contingency: 'J-1', task: 'Property Inspection Period', days: 14, direction: 'After', base: 'Acceptance' },
   { id: '9', contingency: 'J-3', task: 'Final Walkthrough', days: 5, direction: 'Before', base: 'Closing' },
   { id: 'j4', contingency: 'J-4', task: 'Withheld/Collected Funds for Repairs', days: 14, direction: 'After', base: 'Acceptance' },
