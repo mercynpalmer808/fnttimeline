@@ -577,7 +577,7 @@ export default function TimelineCreator() {
     worksheet.addRow([]);
     worksheet.addRow([]);
     const disclosureRow = worksheet.addRow([
-      "Disclosure: This timeline is based on the Hawai'i Association of REALTORS(R) Purchase Contract, Revision 2/25. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties."
+      "Disclosure: This timeline is based on the Hawai'i Association of REALTORS(R) Purchase Contract, Revision 11/26. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties."
     ]);
     worksheet.mergeCells(`A${disclosureRow.number}:H${disclosureRow.number}`);
     disclosureRow.getCell(1).font = { italic: true, size: 10, color: { argb: 'FF374151' } };
@@ -819,7 +819,7 @@ export default function TimelineCreator() {
     // Add disclosure text
     doc.setFontSize(6);
     doc.setTextColor(100, 116, 139); // slate-500
-    const disclosureText = "Disclosure: This timeline is based on the Hawai'i Association of REALTORS(R) Purchase Contract, Revision 2/25. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties.";
+    const disclosureText = "Disclosure: This timeline is based on the Hawai'i Association of REALTORS(R) Purchase Contract, Revision 11/26. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties.";
     
     // Split text to fit width (14 to 196 = 182 width)
     const splitText = doc.splitTextToSize(disclosureText, 182);
@@ -1338,7 +1338,7 @@ export default function TimelineCreator() {
 
       <div className="mt-8 pt-4 border-t border-slate-200 text-[10px] text-slate-500 leading-relaxed text-center">
         <strong>Disclosure:</strong><br />
-        This timeline is based on the Hawaiʻi Association of REALTORS® Purchase Contract, Revision 2/25. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties.
+        This timeline is based on the Hawaiʻi Association of REALTORS® Purchase Contract, Revision 11/26. Dates shown are calculated using information provided and standard contract timeframes. This timeline is provided as a general reference only and is not intended to replace the purchase contract, addenda, or legal advice. All dates, deadlines, and obligations should be independently verified against the fully executed contract and confirmed with the appropriate parties.
       </div>
 
       {/* Instructions Modal */}
