@@ -77,11 +77,11 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: 'i3a', contingency: 'I-3(a)', task: 'Buyer Acknowledgment of Disclosure', days: 10, direction: 'After', base: 'Acceptance' },
   { id: 'i3b', contingency: 'I-3(b)', task: 'Buyer Review/Rescission Period', days: 15, direction: 'After', base: 'Acceptance' },
   { id: '4', contingency: 'J-1', task: 'Property Inspection Period', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: '9', contingency: 'J-3', task: 'Final Walkthrough', days: 5, direction: 'Before', base: 'Closing' },
-  { id: 'j4', contingency: 'J-4', task: 'Withheld/Collected Funds for Repairs', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'j8', contingency: 'J-8', task: 'Removal of Items from Property', days: 5, direction: 'Before', base: 'Closing' },
-  { id: 'j9_cleaning', contingency: 'J-9(a)', task: 'Cleaning before Closing', days: 5, direction: 'Before', base: 'Closing' },
-  { id: 'j10', contingency: 'J-10', task: 'Animal Related Treatment', days: 5, direction: 'Before', base: 'Closing' },
+  { id: 'j8', contingency: 'J-5', task: 'Removal of Items from Property', days: 5, direction: 'Before', base: 'Closing' },
+  { id: 'j9_cleaning', contingency: 'J-6(a)', task: 'Cleaning before Closing', days: 5, direction: 'Before', base: 'Closing' },
+  { id: 'j10', contingency: 'J-7', task: 'Animal Related Treatment', days: 5, direction: 'Before', base: 'Closing' },
+  { id: '9', contingency: 'J-8', task: 'Final Walkthrough', days: 5, direction: 'Before', base: 'Closing' },
+  { id: 'j4', contingency: 'J-9', task: 'Withheld/Collected Funds for Repairs', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'k_staking_survey', contingency: 'K-1', task: 'Staking', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'k3a', contingency: 'K-3(a)', task: 'Boundary Encroachment(terminate)', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'k3b', contingency: 'K-3(b)', task: 'Boundary Encroachment(Remedied)', days: 14, direction: 'After', base: 'Acceptance' },
@@ -90,12 +90,13 @@ const INITIAL_EVENTS: TimelineEvent[] = [
   { id: 'l2c', contingency: 'L-2(c)', task: 'Termite Report Cost/Seller or Buyer to Pay', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'm1d_1', contingency: 'M-1(d)', task: 'Condo/HOA Docs to Buyer', days: 10, direction: 'After', base: 'Acceptance' },
   { id: 'm1d_2', contingency: 'M-1(d)', task: 'Buyer Receipt of Condo/HOA Docs', days: 10, direction: 'After', base: 'Acceptance' },
-  { id: 'm1e', contingency: 'M-1(e)', task: 'Documentation Approval by Buyer', days: 10, direction: 'After', base: 'Acceptance' },
+  { id: 'm1e', contingency: 'M-1(e)', task: 'Documentation Approval by Buyer', days: 15, direction: 'After', base: 'Acceptance' },
   { id: 'm1f', contingency: 'M-1(f)', task: 'Return Condo/HOA Docs if terminating', days: 10, direction: 'After', base: 'Acceptance' },
-  { id: 'm3', contingency: 'M-3', task: 'Delivery of Addtl Documents', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'm3', contingency: 'M-3', task: 'Delivery of Addtl Documents', days: 3, direction: 'After', base: 'Acceptance' },
+  { id: 'n1', contingency: 'N-1', task: 'Property Free of Tenants/Occupants', days: 0, direction: 'Before', base: 'Closing' },
   { id: 'n2a', contingency: 'N-2(a)', task: 'Rental Documents Delivery', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'n2b', contingency: 'N-2(b)', task: 'Rental Document Review', days: 14, direction: 'After', base: 'Acceptance' },
-  { id: 'o3', contingency: 'O-3', task: 'Termination after a Specified Contingency Time Period', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'o3', contingency: 'O-3', task: 'Termination after a Specified Contingency Time Period', days: 7, direction: 'After', base: 'Acceptance' },
   { id: 'q', contingency: 'Q', task: 'Special Terms', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'custom1', contingency: '', task: '', days: 0, direction: 'After', base: 'Acceptance' },
   { id: 'custom2', contingency: '', task: '', days: 0, direction: 'After', base: 'Acceptance' },
@@ -1116,16 +1117,16 @@ export default function TimelineCreator() {
                       <select
                         value={event.contingency}
                         onChange={e => {
-                          const isJ9A = e.target.value === 'J-9(a)';
+                          const isJ9A = e.target.value === 'J-6(a)';
                           updateEvent(event.id, { 
-                            contingency: isJ9A ? 'J-9(a)' : 'J-9(b)', 
+                            contingency: isJ9A ? 'J-6(a)' : 'J-6(b)', 
                             task: isJ9A ? 'Cleaning before Closing' : 'Cleaning Credit' 
                           });
                         }}
                         className={`w-full bg-transparent border-slate-200 rounded p-1 text-sm shadow-sm focus:border-blue-500 focus:ring-0 ${event.completedDate ? 'line-through text-slate-500' : ''}`}
                       >
-                        <option value="J-9(a)">J-9(a)</option>
-                        <option value="J-9(b)">J-9(b)</option>
+                        <option value="J-6(a)">J-6(a)</option>
+                        <option value="J-6(b)">J-6(b)</option>
                       </select>
                     ) : event.id === 'f3' ? (
                       <select
