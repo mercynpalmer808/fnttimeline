@@ -49,9 +49,10 @@ interface TimelineEvent {
 }
 
 const INITIAL_EVENTS: TimelineEvent[] = [
-  { id: '1a', contingency: 'B-1', task: 'Initial Deposit', days: 3, direction: 'After', base: 'Acceptance' },
+  { id: '1a', contingency: 'C-1', task: 'Initial Deposit', days: 3, direction: 'After', base: 'Acceptance' },
   { id: '1b', contingency: 'C-2', task: 'Additional Deposit', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'c3', contingency: 'C-3', task: 'Concessions', days: 14, direction: 'After', base: 'Acceptance' },
+  { id: 'c4', contingency: 'C-4', task: "Seller's Compensation to Buyer's Brokerage", days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e3', contingency: 'E-3(a)', task: 'Inventory of Furnishings Attached', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e3c', contingency: 'E-3(c)', task: 'Approval of Furnishings', days: 14, direction: 'After', base: 'Acceptance' },
   { id: 'e5a', contingency: 'E-5(a)', task: 'Inclusion of PV', days: 14, direction: 'After', base: 'Acceptance' },
